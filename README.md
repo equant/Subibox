@@ -2,14 +2,13 @@
 
 A TV and rotary dial telephone controlled digital jukebox
 
-# Status:
+https://youtu.be/yD5oH2uD-sM
 
-Non-working.  LastFM doesn't stream.  New version in the pipeline.  Should be ready in 2039.
+# Status
+
+Non-working.  New version using Kivy is actively being developed.  Should be ready in 2039.
 
 
 # Requirements
 
-```
-pip install --user Cython
-pip install --user kivy
-```
+Python, kivy, mutagen, sqlite3.
