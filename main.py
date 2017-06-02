@@ -1,114 +1,147 @@
-#! /usr/bin/env python
+from kivy.app import App
+from kivy.lang import Builder
+from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.core.window import Window
+from kivy.uix.widget import Widget
 
-import subprocess, sys, random
+from kivy.properties import StringProperty
 
-import cocos
-from cocos.director import director
-# import all the transitions
-from cocos.scenes import *
+import sqlite3
 
-import pyglet
-from pyglet.window import key
+import musicSearch
+#from mutagen.easyid3 import EasyID3
 
-# My Classes
-from arduinoSerial  import ArduinoSerial
-from protoJukeboxScene import ProtoJukeboxScene
-from lastfm import LastFMScene, LastFMMenuScene
-from proxy import Proxy
+search = musicSearch.MusicSearch()
 
-def checkHarwareInterface(i, arduino):
+# Create both screens. Please note the root.manager.current: this is how
+# you can control the ScreenManager from kv. Each screen has by default a
+# property manager that gives you the instance of the ScreenManager used.
+Builder.load_string("""
+<AlbumScreen>:
+    GridLayout:
+        rows: 3
+        Button:
+            text: 'A'
+        Button:
+            text: 'B'
+        Button:
+            text: 'C'
+        Button:
+            text: '!'
+        Button:
+            text: '@'
+        Button:
+            text: '#'
+        Button:
+            text: 'x'
+        Button:
+            text: 'y'
+        Button:
+            text: 'z'
+            on_press: root.manager.current = 'menu'
 
-    readlineString = arduino.readline()
-    readlineString = readlineString.rstrip()
+<SearchScreen>:
+    BoxLayout:
+        Label:
+            text: 'Test'
+        Button:
+            text: 'Goto settings'
+            on_press: root.manager.current = 'settings'
+        Button:
+            text: 'Quit'
+            on_press: root.manager.current = 'albums'
 
-    # Is it valid?
-    if readlineString != "":
-        #print "STRING: ", readlineString
+<SettingsScreen>:
+    BoxLayout:
+        Button:
+            text: 'My settings button'
+        Button:
+            text: 'Back to menu'
+            on_press: root.manager.current = 'menu'
+""")
 
-        director.scene.handleInput( readlineString )
-        #if readlineString == "1":
-            #if Proxy.inputMode == "search":
-                #if Proxy.playMode == "lastfm":
-                    ##director.replace( cocos.scene.Scene( LastFMScene() ) )
-                    #try:
-                        #director.replace( FadeTransition( Proxy.lastfm_scene, duration=1 ) )
-                    #except:
-                        #pass
-        #elif readlineString == "2":
-            #if Proxy.inputMode == "search":
-                #if Proxy.playMode == "lastfm":
-                    #try:
-                        #director.replace( FadeTransition( Proxy.library_scene, duration=1 ) )
-                    #except:
-                        #pass
+class MyKeyboardListener(Widget):
 
-            #if len(fullSearchString) > 1:
-                #playArtist(fullSearchString)
-                #fullSearchString = ""
-                #searchList = []
+    def __init__(self, **kwargs):
+        super(MyKeyboardListener, self).__init__(**kwargs)
+        self._keyboard = Window.request_keyboard(
+            self._keyboard_closed, self, 'text')
+        if self._keyboard.widget:
+            # If it exists, this widget is a VKeyboard object which you can use
+            # to change the keyboard layout.
+            pass
+        self._keyboard.bind(on_key_down=self._on_keyboard_down)
 
-def main():
+    def _keyboard_closed(self):
+        print('My keyboard have been closed!')
+        self._keyboard.unbind(on_key_down=self._on_keyboard_down)
+        self._keyboard = None
 
-    # Setup Window...
+    def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
+        print('The key', keycode, 'have been pressed')
+        print(' - text is %r' % text)
+        print(' - modifiers are %r' % modifiers)
 
-    platform = pyglet.window.get_platform()
-    display  = platform.get_default_display()
+        # Keycode is composed of an integer + a string
+        # If we hit escape, release the keyboard
+        if keycode[1] == 'escape':
+            keyboard.release()
 
-    ### DEV
-    screen   = display.get_screens()[0]
-    director.init(fullscreen=False, screen=screen)
-    ### PRODUCTION
-    #screen   = display.get_screens()[1]
-    #director.init(fullscreen=True, screen=screen)
+        # Return True to accept the key. Otherwise, it will be used by
+        # the system.
+        return True
 
-    director.window.set_mouse_visible(False)
+class ProtoScreen(Screen):
 
-    # Display Startup Screen
-    jukebox_init_scene = JukeboxInitScene()
-    director.run( jukebox_init_scene )
-    
+    def handle_input(self, input_string):
+        #print("Key!")
+        pass
 
-class JukeboxInitScene( ProtoJukeboxScene ):
 
-    def __init__(self):
-        super( JukeboxInitScene, self ).__init__()
+class SearchScreen(ProtoScreen):
+    search_string = StringProperty()
 
-        label = cocos.text.Label('Starting Up...',
-            font_name='Times New Roman',
-            font_size=48,
-            x=director.window.width//2, y=director.window.height//1.8,
-            anchor_x='center', anchor_y='center')
+    def handle_input(self, input_string):
+        self.search_string += input_string
+        print("Here it is: {}".format(self.search_string))
 
-        self.label = label
-        self.add( self.label )
-        self.initialize()
-        director.run( Proxy.lastfm_scene )
+    def on_enter(self):
+        self.search_string = ""
 
-    def initialize(self):
 
-        self.label.element.text = "Connecting to the Arduino..."
-        # Connect to the Arduino...
+class SettingsScreen(ProtoScreen):
+    pass
+
+class AlbumScreen(ProtoScreen):
+    pass
+
+
+class SubeboxApp(App):
+
+    def build(self):
+        # Create the screen manager
+        self.sm = ScreenManager()
+        self.sm.add_widget(SearchScreen(name='menu'))
+        self.sm.add_widget(SettingsScreen(name='settings'))
+        self.sm.add_widget(AlbumScreen(name='albums'))
+        Window.bind(on_key_down=self._on_keyboard_down)
+        self._connect_to_database()
+        return self.sm
+
+    def _on_keyboard_down(self, *args):
+        #print("Got a key down event: {}".format(args))
+        self.sm.current_screen.handle_input(args[3])
+        return True
+
+    def _connect_to_database(self):
         try:
-            arduinoSerial = ArduinoSerial()
-            arduino = arduinoSerial.connect()
-            pyglet.clock.schedule(checkHarwareInterface, arduino)
+            dsn = 'dbTools/id3.sqlite'
+            self.database = sqlite3.connect(dsn)
+            self.database.row_factory = sqlite3.Row
+            self.database.text_factory = str
         except:
-            print "ERROR: Failed to connect to the arduino"
-            sys.exit(0)
-
-        self.label.element.text = "Loading Fonts..."
-        pyglet.font.add_file('assets/avenir.ttf')
-        pyglet.font.load('Avenir LT Std')
-
-        self.label.element.text = "Initializing Scenes..."
-        # Premake our scenes
-        Proxy.lastfm_scene      = LastFMScene()
-        Proxy.lastfm_scene.checkLastFM("arrrrgh!") # preload track name if lastfm is already playing
-        Proxy.lastfm_menu_scene = LastFMMenuScene()
-        #Proxy.library_scene = LibraryScene()
+            print("Database totally didn't work. :(")
 
 
-
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    SubeboxApp().run()
