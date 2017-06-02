@@ -11,7 +11,8 @@ import sqlite3
 import musicSearch
 #from mutagen.easyid3 import EasyID3
 
-search = musicSearch.MusicSearch()
+search   = musicSearch.MusicSearch()
+analyzer = musicSearch.Analyzer()
 
 # Create both screens. Please note the root.manager.current: this is how
 # you can control the ScreenManager from kv. Each screen has by default a
@@ -60,36 +61,6 @@ Builder.load_string("""
             on_press: root.manager.current = 'menu'
 """)
 
-class MyKeyboardListener(Widget):
-
-    def __init__(self, **kwargs):
-        super(MyKeyboardListener, self).__init__(**kwargs)
-        self._keyboard = Window.request_keyboard(
-            self._keyboard_closed, self, 'text')
-        if self._keyboard.widget:
-            # If it exists, this widget is a VKeyboard object which you can use
-            # to change the keyboard layout.
-            pass
-        self._keyboard.bind(on_key_down=self._on_keyboard_down)
-
-    def _keyboard_closed(self):
-        print('My keyboard have been closed!')
-        self._keyboard.unbind(on_key_down=self._on_keyboard_down)
-        self._keyboard = None
-
-    def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
-        print('The key', keycode, 'have been pressed')
-        print(' - text is %r' % text)
-        print(' - modifiers are %r' % modifiers)
-
-        # Keycode is composed of an integer + a string
-        # If we hit escape, release the keyboard
-        if keycode[1] == 'escape':
-            keyboard.release()
-
-        # Return True to accept the key. Otherwise, it will be used by
-        # the system.
-        return True
 
 class ProtoScreen(Screen):
 
@@ -104,6 +75,9 @@ class SearchScreen(ProtoScreen):
     def handle_input(self, input_string):
         self.search_string += input_string
         print("Here it is: {}".format(self.search_string))
+        print("Here it is analyzed: {}".format(analyzer.analyze(self.search_string)))
+        search.search(self.search_string)
+
 
     def on_enter(self):
         self.search_string = ""
