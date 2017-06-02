@@ -23,21 +23,20 @@ class Analyzer:
 
     def analyze(self, text):
         words = []
-        text = self.strip_accents(text)
+        #text = self.strip_accents(text)
         text = re.compile('[\'`?"]').sub(" ", text)
         text = re.compile('[^A-Za-z0-9]').sub(" ", text)
         for word in text.split(" "):
             word = word.strip()
             if word != "" and not word in self.stop_words:
-                if not isinstance(word, unicode):
-                    words.append(word.lower())
-                else:
-                    words.append(word.lower())
+                words.append(word.lower())
         return words
 
     def strip_accents(self,s):
-        s = unicode(s)
-        return ''.join((c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn'))
+        #s = unicode(s)
+        #return ''.join((c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn'))
+        pass
+
 
 
 class ID3:
