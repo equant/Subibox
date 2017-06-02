@@ -81,7 +81,7 @@ class MusicSearch:
                 #if name[-5:].lower() == '.flac':
                 if 1:
                     path = os.path.join(root,name)
-                    print "NAME: ", name
+                    print("NAME: ", name)
                     try:
                         id3 = ID3(path)
                     except:
@@ -97,14 +97,14 @@ class MusicSearch:
                                 cursor.execute("INSERT INTO id3index(id3_id,keyword,field) VALUES (?,?,?);", (str(last_id3_id), word, field))
         cursor.execute('SELECT COUNT(*) AS nbrows FROM id3index LIMIT 1;')
         for line in cursor:
-            print 'index size: ' + str(line["nbrows"])
+            print('index size: ' + str(line["nbrows"]))
         cnx.commit()
         if len(errors) > 0:
-            print ""
-            print "---- Errors ----"
-            print ""
+            print("")
+            print("---- Errors ----")
+            print("")
             for error in errors:
-                print error
+                print(error)
 
     def search(self,query):
         #print "SEARCHING FOR: " + query
@@ -127,14 +127,14 @@ class MusicSearch:
         cursor.execute(q)
         for line in cursor:
             result.append([line["full_artist_name"], 100])
-            print line["full_artist_name"], " : 100"
+            print(line["full_artist_name"], " : 100")
 
         # Look for a like match
         q = 'SELECT keyword, full_artist_name FROM artist_keywords WHERE keyword LIKE "' + str(query) + '%" GROUP BY full_artist_name'
         cursor.execute(q)
         for line in cursor:
             result.append([line["full_artist_name"], 10])
-            print line["full_artist_name"], " : 10"
+            print(line["full_artist_name"], " : 10")
         return result
 
 #    def search(self,query):
@@ -167,7 +167,7 @@ class MusicSearch:
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print 'Usage: tags.py index-build [your music dir]'
+        print('Usage: tags.py index-build [your music dir]')
     else:
         index = MusicSearch()
         if sys.argv[1] == 'index-build':

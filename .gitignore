@@ -1,0 +1,16 @@
+*.swp
+*.swo
+tags
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# C extensions
+*.so
+
+# LaTeX temporary files
+*.aux
+*.log
+*.toc
+*.synctex.gz
