@@ -1,12 +1,13 @@
 from kivy.app import App
 from kivy.lang import Builder
-from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
 
 from kivy.properties import StringProperty
 
 import sqlite3
+import random
 
 import musicSearch
 #from mutagen.easyid3 import EasyID3
@@ -14,12 +15,14 @@ import musicSearch
 search   = musicSearch.MusicSearch()
 analyzer = musicSearch.Analyzer()
 
+
 # Create both screens. Please note the root.manager.current: this is how
 # you can control the ScreenManager from kv. Each screen has by default a
 # property manager that gives you the instance of the ScreenManager used.
 Builder.load_string("""
 <AlbumScreen>:
     GridLayout:
+        id: layout
         rows: 3
         Button:
             text: 'A'
@@ -38,8 +41,8 @@ Builder.load_string("""
         Button:
             text: 'y'
         Button:
-            text: 'z'
-            on_press: root.manager.current = 'menu'
+            text: 'Back To Main Menu'
+            on_release: root.manager.current = 'menu'
 
 <SearchScreen>:
     BoxLayout:
@@ -47,18 +50,18 @@ Builder.load_string("""
             text: 'Test'
         Button:
             text: 'Goto settings'
-            on_press: root.manager.current = 'settings'
+            on_release: root.manager.current = 'settings'
         Button:
-            text: 'Quit'
-            on_press: root.manager.current = 'albums'
+            text: 'View Album Screen'
+            on_release: root.manager.current = 'albums'
 
 <SettingsScreen>:
     BoxLayout:
         Button:
-            text: 'My settings button'
+            text: 'Useless button'
         Button:
-            text: 'Back to menu'
-            on_press: root.manager.current = 'menu'
+            text: 'Back to main screen'
+            on_release: root.manager.current = 'menu'
 """)
 
 
@@ -87,14 +90,20 @@ class SettingsScreen(ProtoScreen):
     pass
 
 class AlbumScreen(ProtoScreen):
-    pass
+    def on_enter(self):
+        grid_layout_widget = self.ids.layout
+        print("Rows: {}".format(grid_layout_widget.rows))
+        for button in self.walk():
+            print("{} -> {}".format(button, button.id))
+            button.color = [random.random() for _ in range(3)] + [1]
 
 
-class SubeboxApp(App):
+class SubiboxApp(App):
 
     def build(self):
         # Create the screen manager
         self.sm = ScreenManager()
+        self.sm.transition = FadeTransition()
         self.sm.add_widget(SearchScreen(name='menu'))
         self.sm.add_widget(SettingsScreen(name='settings'))
         self.sm.add_widget(AlbumScreen(name='albums'))
@@ -118,4 +127,4 @@ class SubeboxApp(App):
 
 
 if __name__ == '__main__':
-    SubeboxApp().run()
+    SubiboxApp().run()
