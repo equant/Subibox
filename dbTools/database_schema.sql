@@ -7,7 +7,8 @@ CREATE TABLE artists(
 CREATE TABLE albums(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     artist_id,
-    album_name,
+    dial_compatible_album_name,
+    full_album_name,
     album_path,
     album_year,
     album_art
