@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 # http://www.desfrenes.com/blog/post/python-mp3-indexer-look-up
 
-import os
-import sys
+import os, sys, re, time
 import mutagen
 from mutagen.easyid3 import EasyID3
 import sqlite3
 import unicodedata
-import re
-import time
 
 # change this path to your sqlite database
 #dsn = '/Users/mickael/python_sandbox/tags/id3.sqlite'
@@ -68,6 +65,8 @@ class ID3:
         self.size = os.stat(filename).st_size
 
 
+# -- Create database file by traversing music directory
+
 class Index:
 
     dir_exceptions = ['Unknown', 'Soundtracks', 'Compilations']
@@ -82,8 +81,6 @@ class Index:
         for artist_dir in os.listdir(root_path):
             artist_root_path = os.path.join(root_path, artist_dir)
             if (os.path.isdir(artist_root_path)) and (artist_dir not in self.dir_exceptions):
-                #alphaNumPattern = re.compile('[\W_]+')
-                alphaNumPattern = re.compile('[\W_]+')
                 full_artist_name = artist_dir.replace("_", " ")
                 dial_compatible_artist_name = artist_dir.replace("_", "").lower()
 
@@ -108,7 +105,7 @@ class Index:
                     artist_id = row[0]
                 else:
                     # We need to save this artist to the artists table.
-                    print("Need to Save!")
+                    print("    ...Adding artist to database...")
                     cursor = conn.execute("""\
                             INSERT INTO artists
                             (dial_compatible_artist_name, full_artist_name)
@@ -134,6 +131,67 @@ class Index:
                         # ignoring errors from sqlite3 for duplicate entries.
                         pass
                 conn.commit()
+
+                ################################
+                # -- Add Albums to the database
+
+                for album_dir in os.listdir(artist_root_path):
+                    album_name = None
+                    album_year = "0000"
+                    album_art_path = ""
+
+                    album_root_path = os.path.join(artist_root_path, album_dir)
+                    if (os.path.isdir(album_root_path)) and (album_dir not in self.dir_exceptions):
+                        match_obj = re.match(r'^(\d\d\d\d)-(.*)', album_dir)
+                        if match_obj.groups() is not None:
+                            album_year = match_obj.group(1)
+                            album_name = match_obj.group(2)
+                        else:
+                            album_name = album_dir
+
+
+                    full_album_name = album_name.replace("_", " ")
+                    dial_compatible_album_name = album_name.replace("_", "").lower()
+
+
+                    if os.path.isfile(album_root_path + "/cover.jpg"):
+                        album_art_path = album_root_path + "/cover.jpg"
+
+                    #print("    album name: {}".format(full_album_name))
+                    #words = analyzer.analyze(full_album_name)
+                    #print("    words:      {}".format(words))
+
+                    album_id = None
+
+                    cursor = conn.execute("""\
+                            SELECT id
+                              FROM albums
+                             WHERE dial_compatible_album_name = ?
+                             LIMIT 1""", (dial_compatible_album_name,))
+                    row = cursor.fetchone()
+
+                    if row is not None:
+                        print("[Warning] Album alread exists in database: {}".format(dial_compatible_album_name))
+                        album_id = row[0]
+                    else:
+                        # We need to save this album to the albums table.
+                        print("    ...Adding album to database...")
+                        cursor = conn.execute("""\
+                                INSERT INTO albums
+                                            (artist_id,
+                                            dial_compatible_album_name,
+                                            full_album_name,
+                                            album_path,
+                                            album_year,
+                                            album_art)
+                                VALUES (?, ?, ?, ?, ?, ?)""",
+                                (artist_id, dial_compatible_album_name, full_album_name, album_root_path, album_year, album_art_path))
+
+                        conn.commit()
+                        album_id = cursor.lastrowid
+                        print("New album saved as id: {}".format(album_id))
+
+
             
         conn.close()
 
