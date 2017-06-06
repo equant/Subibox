@@ -11,4 +11,4 @@ Non-working.  New version using Kivy is actively being developed.  Should be rea
 
 # Requirements
 
-Python, kivy, mutagen, sqlite3.
+Python, kivy, mutagen, sqlite3, pandas.
