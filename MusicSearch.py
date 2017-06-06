@@ -86,9 +86,7 @@ class Search():
 
         if len(result) > 0:
             df = pd.DataFrame(result, columns=['name', 'score', 'id'])
-            #ddd = df.groupby(['name', 'id'])
-            #ddd.sum()
-            return df.groupby(['name', 'id']).sum().sort_values(by=['score'], ascending=False)
+            return df.groupby(['name', 'id']).sum().sort_values(by=['score'], ascending=False).reset_index()
         else:
             return None
 
