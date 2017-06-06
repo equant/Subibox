@@ -4,7 +4,7 @@ from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
 
-from kivy.properties import StringProperty
+from kivy.properties import StringProperty, ListProperty, ObjectProperty
 
 import sqlite3
 import random
@@ -21,13 +21,14 @@ analyzer    = MusicSearch.StringAnalyzer()
 # property manager that gives you the instance of the ScreenManager used.
 Builder.load_string("""
 <AlbumScreen>:
+    id: album_screen
     GridLayout:
-        id: layout
+        id: button_layout
         rows: 3
         Button:
-            text: 'A'
+            text: '$'
         Button:
-            text: 'B'
+            text: '%'
         Button:
             text: 'C'
         Button:
@@ -35,25 +36,34 @@ Builder.load_string("""
         Button:
             text: '@'
         Button:
+            text: 'F'
+        Button:
             text: '#'
         Button:
-            text: 'x'
+            text: '*'
         Button:
-            text: 'y'
-        Button:
+            id: next_button
             text: 'Back To Main Menu'
             on_release: root.manager.current = 'menu'
 
 <LibraryScreen>:
+    id: library_screen
     BoxLayout:
+        orientation: 'vertical'
         Label:
-            text: 'Test'
-        Button:
-            text: 'Goto settings'
-            on_release: root.manager.current = 'settings'
-        Button:
-            text: 'View Album Screen'
-            on_release: root.manager.current = 'albums'
+            text: ''
+        Label:
+            id: search_string_label
+            text: 'Type Something...'
+            font_size: 48
+        Label:
+            text: ''
+#        Button:
+#            text: 'Goto settings'
+#            on_release: root.manager.current = 'settings'
+#        Button:
+#            text: 'View Album Screen'
+#            on_release: root.manager.current = 'albums'
 
 <SettingsScreen>:
     BoxLayout:
@@ -73,12 +83,18 @@ class ProtoScreen(Screen):
 
 
 class LibraryScreen(ProtoScreen):
-    search_string = StringProperty()
-    last_result = None
+    search_string    = StringProperty()
+    last_result_df   = None  # This is a Pandas dataframe( 'name', 'id', 'score' )
+    last_artist_name = StringProperty()  # This is a Pandas dataframe( 'name', 'id', 'score' )
+
+    def __init__(self, *args, **kwargs):
+        super(LibraryScreen, self).__init__(*args, **kwargs)
+        self.bind(last_artist_name=self.set_search_label)
 
     def handle_input(self, input_string):
         if input_string is None:
-            self.manager.get_screen('albums').albums = ["poop", "ship", "destroyer"] + [self.last_result]
+            self.manager.get_screen('albums').albums = ["poop", "ship", "destroyer"] + [self.last_result['name'][0]]
+            #self.manager.ids.album_screen.albums = ["poop", "ship", "destroyer"] + [self.last_result]
             self.manager.current = 'albums'
         else:
             self.search_string += input_string
@@ -87,13 +103,15 @@ class LibraryScreen(ProtoScreen):
             self.search_string = ""
         else:
             self.last_result = result
+            self.last_artist_name = result['name'][0]
+
+    def set_search_label(self, instance, value):
+        #print("HERE WE ARE: {}".format(value))
+        self.ids.search_string_label.text = value
 
 
-    def on_enter(self):
+    def on_pre_enter(self):
         self.search_string = ""
-        #print(self.manager.screens)
-        #for i in self.manager.screens:
-            #print(i.name)
         
 
 class SettingsScreen(ProtoScreen):
@@ -101,13 +119,17 @@ class SettingsScreen(ProtoScreen):
 
 
 class AlbumScreen(ProtoScreen):
-    albums = []
+    albums = ListProperty()
     def on_enter(self):
-        grid_layout_widget = self.ids.layout
+        grid_layout_widget = self.ids.button_layout
         print("Rows: {}".format(grid_layout_widget.rows))
         for button in self.walk():
             print("{} -> {}".format(button, button.id))
             button.color = [random.random() for _ in range(3)] + [1]
+        for button, string in zip(reversed(self.ids.button_layout.children), self.albums):
+            button.text = string
+            print("BUTTON DEBUG: {} : {}".format(button, string))
+        #self.ids.layout.ids.foo.text = self.albums[-1] 
         if len(self.albums) > 0:
             print(self.albums)
 
