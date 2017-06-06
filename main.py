@@ -9,11 +9,11 @@ from kivy.properties import StringProperty
 import sqlite3
 import random
 
-import musicSearch
+import MusicSearch
 #from mutagen.easyid3 import EasyID3
 
-search   = musicSearch.MusicSearch()
-analyzer = musicSearch.Analyzer()
+musicSearch = MusicSearch.Search()
+analyzer    = MusicSearch.StringAnalyzer()
 
 
 # Create both screens. Please note the root.manager.current: this is how
@@ -44,7 +44,7 @@ Builder.load_string("""
             text: 'Back To Main Menu'
             on_release: root.manager.current = 'menu'
 
-<SearchScreen>:
+<LibraryScreen>:
     BoxLayout:
         Label:
             text: 'Test'
@@ -72,58 +72,80 @@ class ProtoScreen(Screen):
         pass
 
 
-class SearchScreen(ProtoScreen):
+class LibraryScreen(ProtoScreen):
     search_string = StringProperty()
+    last_result = None
 
     def handle_input(self, input_string):
-        self.search_string += input_string
-        print("Here it is: {}".format(self.search_string))
-        print("Here it is analyzed: {}".format(analyzer.analyze(self.search_string)))
-        search.search(self.search_string)
+        if input_string is None:
+            self.manager.get_screen('albums').albums = ["poop", "ship", "destroyer"] + [self.last_result]
+            self.manager.current = 'albums'
+        else:
+            self.search_string += input_string
+        result = musicSearch.artist_search(self.search_string)
+        if result is None:
+            self.search_string = ""
+        else:
+            self.last_result = result
 
 
     def on_enter(self):
         self.search_string = ""
-
+        #print(self.manager.screens)
+        #for i in self.manager.screens:
+            #print(i.name)
+        
 
 class SettingsScreen(ProtoScreen):
     pass
 
+
 class AlbumScreen(ProtoScreen):
+    albums = []
     def on_enter(self):
         grid_layout_widget = self.ids.layout
         print("Rows: {}".format(grid_layout_widget.rows))
         for button in self.walk():
             print("{} -> {}".format(button, button.id))
             button.color = [random.random() for _ in range(3)] + [1]
+        if len(self.albums) > 0:
+            print(self.albums)
+
+
+class MyManager(ScreenManager):
+    def get_screen(self, name):
+        for _ in self.screens:
+            print("Looking for screen: {} / {}".format(name, _.name))
+            if _.name == name:
+                return _
+        return None
+
 
 
 class SubiboxApp(App):
+
+    def get_screen(self, name):
+        for _ in self.sm.screens:
+            print("Looking for screen: {} / {}".format(name, _.name))
+            if _.name == name:
+                return _
+        return None
+
 
     def build(self):
         # Create the screen manager
         self.sm = ScreenManager()
         self.sm.transition = FadeTransition()
-        self.sm.add_widget(SearchScreen(name='menu'))
+        self.sm.add_widget(LibraryScreen(name='menu'))
         self.sm.add_widget(SettingsScreen(name='settings'))
         self.sm.add_widget(AlbumScreen(name='albums'))
         Window.bind(on_key_down=self._on_keyboard_down)
-        self._connect_to_database()
         return self.sm
 
     def _on_keyboard_down(self, *args):
-        #print("Got a key down event: {}".format(args))
+        print("Got a key down event: {}".format(args))
         self.sm.current_screen.handle_input(args[3])
         return True
-
-    def _connect_to_database(self):
-        try:
-            dsn = 'dbTools/id3.sqlite'
-            self.database = sqlite3.connect(dsn)
-            self.database.row_factory = sqlite3.Row
-            self.database.text_factory = str
-        except:
-            print("Database totally didn't work. :(")
 
 
 if __name__ == '__main__':

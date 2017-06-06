@@ -16,7 +16,8 @@ class StringAnalyzer:
     """
     Analyze string and remove stop words
     """
-    stop_words = ['los','las','el','the','of','and','le','de','a','des','une','un','s','is','www','http','com','org','-']
+    #stop_words = ['los','las','el','the','of','and','le','de','a','des','une','un','s','is','www','http','com','org','-']
+    stop_words = ['www','http','com','org','-']
     def __init__(self):
         pass
 
