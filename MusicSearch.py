@@ -35,6 +35,18 @@ class Search():
     def __init__(self, verbose=True):
         self.verbose = verbose
 
+    def get_artist_albums(self, artist_id):
+        cursor = conn.execute("""\
+                SELECT id, full_album_name, album_year, album_path, album_art
+                  FROM albums
+                 WHERE artist_id = ?
+              ORDER BY album_year
+                 """, (artist_id,))
+        df = pd.DataFrame(cursor.fetchall())
+        #print("Found {} albums for artist id {}".format(len(rows), artist_id))
+        return df
+
+
     def artist_search(self,query):
         print("Searching artists for: {}".format(query))
         result = []
