@@ -91,11 +91,13 @@ class LibraryScreen(ProtoScreen):
         super(LibraryScreen, self).__init__(*args, **kwargs)
         self.bind(last_artist_name=self.set_search_label)
 
+    def on_pre_enter(self):
+        self.search_string = ""
+
     def handle_input(self, input_string):
+
         if input_string is None:
-            self.manager.get_screen('albums').albums = ["poop", "ship", "destroyer"] + [self.last_result['name'][0]]
-            #self.manager.ids.album_screen.albums = ["poop", "ship", "destroyer"] + [self.last_result]
-            self.manager.current = 'albums'
+            self.switch_to_album_screen()
         else:
             self.search_string += input_string
         result = musicSearch.artist_search(self.search_string)
@@ -105,14 +107,15 @@ class LibraryScreen(ProtoScreen):
             self.last_result = result
             self.last_artist_name = result['name'][0]
 
+
+    # -- bound to self.last_artist_name
     def set_search_label(self, instance, value):
-        #print("HERE WE ARE: {}".format(value))
         self.ids.search_string_label.text = value
-
-
-    def on_pre_enter(self):
-        self.search_string = ""
         
+    # -- Due to pressing "enter" in self.handle_input()
+    def switch_to_album_screen(self):
+        self.manager.get_screen('albums').albums = musicSearch.get_artist_albums(3)
+        self.manager.current = 'albums'
 
 class SettingsScreen(ProtoScreen):
     pass
@@ -120,18 +123,40 @@ class SettingsScreen(ProtoScreen):
 
 class AlbumScreen(ProtoScreen):
     albums = ListProperty()
+    album_pages = None
+
+    def __init__(self, *args, **kwargs):
+        super(AlbumScreen, self).__init__(*args, **kwargs)
+        self.bind(albums=self.new_albums)
+
     def on_enter(self):
         grid_layout_widget = self.ids.button_layout
         print("Rows: {}".format(grid_layout_widget.rows))
         for button in self.walk():
             print("{} -> {}".format(button, button.id))
             button.color = [random.random() for _ in range(3)] + [1]
-        for button, string in zip(reversed(self.ids.button_layout.children), self.albums):
-            button.text = string
-            print("BUTTON DEBUG: {} : {}".format(button, string))
-        #self.ids.layout.ids.foo.text = self.albums[-1] 
-        if len(self.albums) > 0:
-            print(self.albums)
+        #for button, string in zip(reversed(self.ids.button_layout.children), self.albums):
+        for button, i in zip(self.ids.button_layout.children, range(len(self.ids.button_layout.children))):
+            if self.album_pages.iloc[i] is not None:
+                button.text = self.album_pages.iloc[i][1]
+
+    def new_albums(self, a, b):
+        print("DEBUG: Running bind method for AlbumScreen.albums")
+        self.album_pages = self.albums[0:9]
+        #self.album_pages = self.make_album_pages(self.albums)
+
+    def make_album_pages(self, a):
+        """
+        This splits the album array/list into pages...
+        a = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+        make_album_pages(a)
+        [[1, 2, 3, 4, 5, 6, 7, 8, 9],
+         [10, 11, 12, 13, 14, 15, 16, 17, 18],
+         [19, 20]]
+        """
+        n = 9   # Number of albums per page.
+        pages = [a[x:x+n] for x in range(0, len(a), n)]
+        return pages
 
 
 class MyManager(ScreenManager):
