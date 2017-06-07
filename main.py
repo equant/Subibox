@@ -200,9 +200,11 @@ class AlbumScreen(ProtoScreen):
         grid_layout_widget = self.ids.album_layout
         #for button, string in zip(reversed(self.ids.button_layout.children), self.albums):
         for album_widget, i in zip(reversed(grid_layout_widget.children), range(len(grid_layout_widget.children))):
-            if self.album_pages.iloc[i] is not None:
-                album_widget.ids['album_image'].source = self.album_pages.iloc[i][4]
-                album_widget.ids['dial_label'].text = str(i+1)
+            pass
+            print("DEBUG: album_pages: {}".format(self.album_pages))
+            #if self.album_pages.iloc[i] is not None:
+                #album_widget.ids['album_image'].source = self.album_pages.iloc[i][4]
+                #album_widget.ids['dial_label'].text = str(i+1)
 
     def new_albums(self, a, b):
         print("DEBUG: Running bind method for AlbumScreen.albums")

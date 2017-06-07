@@ -3,9 +3,9 @@
 
 import os, sys, re, time
 import mutagen
-from mutagen.easyid3 import EasyID3
 import sqlite3
 import unicodedata
+from colorz import colorz
 
 # change this path to your sqlite database
 #dsn = '/Users/mickael/python_sandbox/tags/id3.sqlite'
@@ -39,31 +39,6 @@ class StringAnalyzer:
         return ''.join((c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn'))
 
 
-class ID3:
-    def __init__(self,path):
-        self._load(path)
-
-    def _load(self, filename):
-        short_tags = full_tags = mutagen.File(filename)
-        comments = []
-        if isinstance(full_tags, mutagen.mp3.MP3):
-            for key in short_tags:
-                if key[0:4] == 'COMM':
-                    if(short_tags[key].desc == ''):
-                        comments.append(short_tags[key].text[0])
-            short_tags = mutagen.mp3.MP3(filename, ID3 = mutagen.easyid3.EasyID3)
-        comments.append('');
-        self.album = short_tags.get('album', [''])[0]
-        self.artist = short_tags.get('artist', [''])[0]
-        self.duration = "%u:%.2d" % (full_tags.info.length / 60, full_tags.info.length % 60)
-        self.length = full_tags.info.length
-        self.title = short_tags.get('title', [''])[0]
-        self.comment = comments[0]
-        self.genre = ''
-        genres = short_tags.get('genre', [''])
-        if len(genres) > 0:
-            self.genre = genres[0]
-        self.size = os.stat(filename).st_size
 
 
 # -- Create database file by traversing music directory
@@ -191,10 +166,42 @@ class Index:
                         conn.commit()
                         album_id = cursor.lastrowid
                         print("New album saved as id: {}".format(album_id))
-
-
+                    if len(album_art_path) > 0:
+                        self.write_album_art_colors(album_id, album_art_path, conn)
             
         conn.close()
+
+
+    def delete_album_colors(self, album_id, conn):
+        print("DELETING COLORS: {}".format(album_id))
+        album_id = str(album_id)
+        cursor = conn.execute("""\
+                DELETE FROM album_colors WHERE album_id = ?
+                """, (album_id,))
+        conn.commit()
+        print("DONE DELETING COLORS: {}".format(album_id))
+
+
+    def write_album_art_colors(self, album_id, album_path, conn):
+        print("DEBUG: Write colors {} {}".format(album_id, album_path))
+        colors = list(colorz(album_path))
+        print("DEBUG: Colors: {}".format(colors))
+        if len(colors) > 0:
+            self.delete_album_colors(album_id, conn)
+        else:
+            print("No colors found for {}".format(album_path))
+            return
+
+        for c in colors:
+            print("Color: {}".format(c))
+            cursor = conn.execute("""\
+                    INSERT INTO album_colors
+                                (album_id, color)
+                         VALUES (?, ?)
+                    """, (album_id, c)
+            )
+            conn.commit()
+
 
 #            for name in files:
 #                #if name[-4:].lower() == '.mp3':
@@ -272,3 +279,12 @@ if __name__ == '__main__':
 
     index = Index()
     index.build(music_path)
+
+
+
+"""
+DELETE FROM artists;
+DELETE FROM albums;
+DELETE FROM album_colors;
+DELETE FROM artist_search_strings; 
+"""
