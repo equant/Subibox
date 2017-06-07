@@ -4,6 +4,7 @@ import os, sys, re, time
 import sqlite3
 import pandas as pd
 
+#database_file = 'dbTools/subibox.sqlite.full'
 database_file = 'dbTools/subibox.sqlite'
 conn          = sqlite3.connect(database_file)
 
