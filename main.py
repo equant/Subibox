@@ -5,9 +5,9 @@ from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.label import Label
 from kivy.core.window import Window
-from kivy.uix.widget import Widget
+#from kivy.uix.widget import Widget
 
-from kivy.properties import StringProperty, ListProperty, ObjectProperty
+from kivy.properties import StringProperty, ListProperty #, ObjectProperty
 
 import sqlite3
 import random
@@ -23,28 +23,32 @@ analyzer    = MusicSearch.StringAnalyzer()
 # you can control the ScreenManager from kv. Each screen has by default a
 # property manager that gives you the instance of the ScreenManager used.
 Builder.load_string("""
-<FancyLabel>:
-    pos_hint: {'x': 0.1, 'y': 0.5}
-    size_hint_y: 0.15
-    size_hint_x: 0.15
+<SubiLabel>:
+    text: "Foo"
+    font_size: 48
     canvas:
         Color:
-            rgba: self.background_color
+            rgba: [1,0,0,0.5]
         Rectangle:
             pos: self.pos  # incorrect
             size: self.size
-    Label:
-        text: self.text
-        color: [0,0,0,1]
-        font_size: 44
 
 <AlbumArt>:
+    source: 'assets/images/default_cover.jpg'
     orientation: "vertical"
     Image:
-        source: 'cover.jpg'
+        id: album_image
+        source: self.source
         #y: self.parent.y + self.parent.height - 200
         #x: self.parent.x
-    FancyLabel:
+    SubiLabel:
+        id: dial_label
+        #size_hint_y: None
+        #height: 110
+        pos_hint: {'x': 0, 'y': 0}
+        size_hint_y: 0.15
+        size_hint_x: 0.15
+
         
 <AlbumScreen>:
     id: album_screen
@@ -115,9 +119,9 @@ class AlbumArt(RelativeLayout):
         return self
 
 
-class FancyLabel(Label):
-    background_color = ListProperty([1,0,0,0.8])
-    text = StringProperty("A")
+class SubiLabel(Label):
+    #background_color = ListProperty([1,0,0,0.8])
+    #text = StringProperty("A")
     def build(self):
         return self
 
@@ -182,14 +186,23 @@ class AlbumScreen(ProtoScreen):
         super(AlbumScreen, self).__init__(*args, **kwargs)
         #self.bind(albums=self.new_albums)
 
+    def handle_input(self, input_string):
+        if input_string in "123456789":
+            print("PLAY: {}".format(self.album_pages.iloc[int(input_string)-1][1]))
+        if input_string == "0": 
+            print("Should go To Operator Screen!")
+            self.manager.current = 'library'
+
+
     def on_pre_enter(self):
         if self.album_pages is None:
             self.make_album_pages(self.albums)
         grid_layout_widget = self.ids.album_layout
         #for button, string in zip(reversed(self.ids.button_layout.children), self.albums):
-        for album, i in zip(grid_layout_widget.children, range(len(grid_layout_widget.children))):
+        for album_widget, i in zip(reversed(grid_layout_widget.children), range(len(grid_layout_widget.children))):
             if self.album_pages.iloc[i] is not None:
-                album.source = self.album_pages.iloc[i][4]
+                album_widget.ids['album_image'].source = self.album_pages.iloc[i][4]
+                album_widget.ids['dial_label'].text = str(i+1)
 
     def new_albums(self, a, b):
         print("DEBUG: Running bind method for AlbumScreen.albums")
@@ -208,6 +221,9 @@ class AlbumScreen(ProtoScreen):
         #n = 9   # Number of albums per page.
         #pages = [a[x:x+n] for x in range(0, len(a), n)]
         #self.album_pages = pages
+        print("DEBUG: Making album pages")
+        print("albums: {}".format(self.albums))
+        print("album_pages: {}".format(self.album_pages))
         self.album_pages = self.albums[0:9]
         return
 
@@ -242,14 +258,14 @@ class SubiboxApp(App):
         # Create the screen manager
         self.sm = ScreenManager()
         self.sm.transition = FadeTransition()
-        self.sm.add_widget(LibraryScreen(name='menu'))
+        self.sm.add_widget(LibraryScreen(name='library'))
         self.sm.add_widget(SettingsScreen(name='settings'))
         self.sm.add_widget(AlbumScreen(name='albums'))
         Window.bind(on_key_down=self._on_keyboard_down)
         return self.sm
 
     def _on_keyboard_down(self, *args):
-        print("Got a key down event: {}".format(args))
+        #print("Got a key down event: {}".format(args))
         self.sm.current_screen.handle_input(args[3])
         return True
 
