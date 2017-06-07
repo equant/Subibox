@@ -14,6 +14,11 @@ CREATE TABLE albums(
     album_art
 );
 
+CREATE TABLE album_colors(
+    album_id,
+    color
+);
+
 CREATE TABLE artist_search_strings(
     search_string,
     artist_id,
