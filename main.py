@@ -166,7 +166,8 @@ class LibraryScreen(ProtoScreen):
         
     # -- Due to pressing "enter" in self.handle_input()
     def switch_to_album_screen(self):
-        self.manager.get_screen('albums').albums = musicSearch.get_artist_albums(3)
+        print("DEBUG: MS: {}".format(self.last_result_df))
+        self.manager.get_screen('albums').albums = musicSearch.get_artist_albums(5)
         self.manager.current = 'albums'
 
 class SettingsScreen(ProtoScreen):
@@ -201,7 +202,7 @@ class AlbumScreen(ProtoScreen):
         #for button, string in zip(reversed(self.ids.button_layout.children), self.albums):
         for album_widget, i in zip(reversed(grid_layout_widget.children), range(len(grid_layout_widget.children))):
             pass
-            print("DEBUG: album_pages: {}".format(self.album_pages))
+            #print("DEBUG: album_pages: {}".format(self.album_pages))
             #if self.album_pages.iloc[i] is not None:
                 #album_widget.ids['album_image'].source = self.album_pages.iloc[i][4]
                 #album_widget.ids['dial_label'].text = str(i+1)
