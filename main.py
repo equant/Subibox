@@ -156,8 +156,13 @@ class LibraryScreen(ProtoScreen):
         if result is None:
             self.search_string = ""
         else:
+            #print("LibraryScreen: setting last_result to:")
+            #print(result)
             self.last_result = result
+            #print(self.last_result['id'][0])
             self.last_artist_name = result['name'][0]
+            #print("LibraryScreen: setting last_artist_name to:")
+            #print(self.last_artist_name)
 
 
     # -- bound to self.last_artist_name
@@ -166,7 +171,8 @@ class LibraryScreen(ProtoScreen):
         
     # -- Due to pressing "enter" in self.handle_input()
     def switch_to_album_screen(self):
-        self.manager.get_screen('albums').albums = musicSearch.get_artist_albums(3)
+        artist_id = self.last_result['id'][0]
+        self.manager.get_screen('albums').albums = musicSearch.get_artist_albums(int(artist_id))
         self.manager.current = 'albums'
 
 class SettingsScreen(ProtoScreen):
@@ -180,15 +186,17 @@ class AlbumScreen(ProtoScreen):
 
     albums      = None
     album_pages = None
-    page = 1
+    page = 0
 
     def __init__(self, *args, **kwargs):
         super(AlbumScreen, self).__init__(*args, **kwargs)
-        #self.bind(albums=self.new_albums)
 
     def handle_input(self, input_string):
-        if input_string in "123456789":
+        if input_string in "12345678":
             print("PLAY: {}".format(self.album_pages.iloc[int(input_string)-1][1]))
+        if input_string == "9": 
+            print("Next Page")
+            self.manager.current = 'library'
         if input_string == "0": 
             print("Should go To Operator Screen!")
             self.manager.current = 'library'
@@ -196,43 +204,43 @@ class AlbumScreen(ProtoScreen):
 
     def on_pre_enter(self):
         if self.album_pages is None:
-            self.make_album_pages(self.albums)
+            self.make_album_pages()
         grid_layout_widget = self.ids.album_layout
-        #for button, string in zip(reversed(self.ids.button_layout.children), self.albums):
         for album_widget, i in zip(reversed(grid_layout_widget.children), range(len(grid_layout_widget.children))):
-            pass
-            print("DEBUG: album_pages: {}".format(self.album_pages))
-            #if self.album_pages.iloc[i] is not None:
-                #album_widget.ids['album_image'].source = self.album_pages.iloc[i][4]
-                #album_widget.ids['dial_label'].text = str(i+1)
+            print("Widget: {}, albums on this page: {}".format(i, len(self.album_pages[self.page])))
+            if len(self.album_pages[self.page]) > i:
+                print("LOOP: {}".format(self.album_pages[self.page]))
+                album_widget.ids['album_image'].source = self.album_pages[self.page].iloc[i][4]
+                album_widget.ids['dial_label'].text = str(i+1)
+            else:
+                album_widget.ids['dial_label'].text = ""
+        # Last button is next button:
+        album_widget.ids['dial_label'].text = "Next"
 
-    def new_albums(self, a, b):
-        print("DEBUG: Running bind method for AlbumScreen.albums")
-        self.album_pages = self.albums[0:9]
-        #self.album_pages = self.make_album_pages(self.albums)
-
-    def make_album_pages(self, a):
+    def make_album_pages(self, n=8):
         """
+        a : The array
+        n : number of albums per pages
+
         This splits the album array/list into pages...
         a = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
         make_album_pages(a)
         [[1, 2, 3, 4, 5, 6, 7, 8, 9],
          [10, 11, 12, 13, 14, 15, 16, 17, 18],
          [19, 20]]
+
+        What this code does...
+        (1) Split albums up into pages of 8 albums.
+
+        What we may want to do in the future...
+            Next *and* Back?  Dynamically only if needed.  Mabye back only if there are > x albums?
         """
-        #n = 9   # Number of albums per page.
-        #pages = [a[x:x+n] for x in range(0, len(a), n)]
-        #self.album_pages = pages
-        print("DEBUG: Making album pages")
-        print("albums: {}".format(self.albums))
-        print("album_pages: {}".format(self.album_pages))
-        self.album_pages = self.albums[0:9]
+        n = 8   # Number of albums per page.
+        a = self.albums
+        pages = [a[x:x+n] for x in range(0, len(a), n)]
+        self.album_pages = pages
         return
 
-    def set_albums(self, albums):
-        for button, i in zip(grid_layout_widget.children, range(len(grid_layout_widget.children))):
-            if albums.iloc[i] is not None:
-                button.text = albums.iloc[i][1]
 
 
 
