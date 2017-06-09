@@ -52,6 +52,8 @@ Builder.load_string("""
         
 <AlbumScreen>:
     id: album_screen
+    spacing: 10
+    padding: 10
     GridLayout:
         id: album_layout
         rows: 3
@@ -155,8 +157,9 @@ class LibraryScreen(ProtoScreen):
         result = musicSearch.artist_search(self.search_string)
         if result is None:
             self.search_string = ""
+            self.last_result_df = None
         else:
-            self.last_result = result
+            self.last_result_df = result
             self.last_artist_name = result['name'][0]
 
 
@@ -166,7 +169,8 @@ class LibraryScreen(ProtoScreen):
         
     # -- Due to pressing "enter" in self.handle_input()
     def switch_to_album_screen(self):
-        print("DEBUG: MS: {}".format(self.last_result_df))
+        print("DEBUG: last_result_df: {}".format(self.last_result_df))
+        print("DEBUG: last_artist_name: {}".format(self.last_artist_name))
         self.manager.get_screen('albums').albums = musicSearch.get_artist_albums(5)
         self.manager.current = 'albums'
 
