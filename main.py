@@ -52,6 +52,8 @@ Builder.load_string("""
         
 <AlbumScreen>:
     id: album_screen
+    spacing: 10
+    padding: 10
     GridLayout:
         id: album_layout
         rows: 3
@@ -155,6 +157,7 @@ class LibraryScreen(ProtoScreen):
         result = musicSearch.artist_search(self.search_string)
         if result is None:
             self.search_string = ""
+            self.last_result_df = None
         else:
             #print("LibraryScreen: setting last_result to:")
             #print(result)
