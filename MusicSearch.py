@@ -37,6 +37,10 @@ class Search():
         self.verbose = verbose
 
     def get_artist_albums(self, artist_id):
+        try:
+            artist_id = int(artist_id)
+        except ValueError:
+            print("MusicSearch.Search.get_artist_albums() [Warning] Value: {} doesn't look like an artist id.".format(artist_id))
         cursor = conn.execute("""\
                 SELECT id, full_album_name, album_year, album_path, album_art
                   FROM albums
