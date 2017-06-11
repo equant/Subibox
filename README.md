@@ -11,4 +11,8 @@ Non-working.  New version using Kivy is actively being developed.  Should be rea
 
 # Requirements
 
-Python, kivy, sqlite3, pandas, a rotary dial telephone
+Python, kivy, python-mpd2, sqlite3, pandas, a rotary dial telephone
+
+````
+$ pip install python-mpd2
+````

@@ -45,7 +45,8 @@ class StringAnalyzer:
 
 class Index:
 
-    dir_exceptions = ['Unknown', 'Soundtracks', 'Compilations']
+    #dir_exceptions = ['Unknown', 'Soundtracks', 'Compilations']
+    dir_exceptions = []
 
     def build(self,root_path):
 
@@ -119,9 +120,12 @@ class Index:
                     album_root_path = os.path.join(artist_root_path, album_dir)
                     if (os.path.isdir(album_root_path)) and (album_dir not in self.dir_exceptions):
                         match_obj = re.match(r'^(\d\d\d\d)-(.*)', album_dir)
-                        if match_obj.groups() is not None:
-                            album_year = match_obj.group(1)
-                            album_name = match_obj.group(2)
+                        if match_obj is not None: 
+                            if match_obj.groups() is not None:
+                                album_year = match_obj.group(1)
+                                album_name = match_obj.group(2)
+                            else:
+                                album_name = album_dir
                         else:
                             album_name = album_dir
 
