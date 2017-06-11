@@ -39,8 +39,9 @@ Builder.load_string("""
     Image:
         id: album_image
         source: self.source
-        #y: self.parent.y + self.parent.height - 200
-        #x: self.parent.x
+    #SubiLabel:
+        #id: album_name
+        #text: ""
     SubiLabel:
         id: dial_label
         #size_hint_y: None
@@ -91,12 +92,13 @@ Builder.load_string("""
 <LibraryScreen>:
     id: library_screen
     BoxLayout:
+        id: layout
         orientation: 'vertical'
         Label:
             text: ''
         Label:
             id: search_string_label
-            text: 'Type Something...'
+            text: 'Dial Something...'
             font_size: 48
         Label:
             text: ''
@@ -131,7 +133,6 @@ class SubiLabel(Label):
 class ProtoScreen(Screen):
 
     def handle_input(self, input_string):
-        #print("Key!")
         pass
 
 
@@ -145,7 +146,9 @@ class LibraryScreen(ProtoScreen):
         self.bind(last_artist_name=self.set_search_label)
 
     def on_pre_enter(self):
-        self.search_string = ""
+        self.search_string    = ""
+        self.last_result_df   = None
+        self.last_artist_name = ""
 
     def handle_input(self, input_string):
 
@@ -159,13 +162,8 @@ class LibraryScreen(ProtoScreen):
             self.search_string = ""
             self.last_result_df = None
         else:
-            #print("LibraryScreen: setting last_result to:")
-            #print(result)
             self.last_result = result
-            #print(self.last_result['id'][0])
             self.last_artist_name = result['name'][0]
-            #print("LibraryScreen: setting last_artist_name to:")
-            #print(self.last_artist_name)
 
 
     # -- bound to self.last_artist_name
@@ -195,30 +193,54 @@ class AlbumScreen(ProtoScreen):
         super(AlbumScreen, self).__init__(*args, **kwargs)
 
     def handle_input(self, input_string):
+        if input_string is None:
+            # Ignore return keypresses.
+            return
         if input_string in "12345678":
             print("PLAY: {}".format(self.album_pages.iloc[int(input_string)-1][1]))
         if input_string == "9": 
             print("Next Page")
-            self.manager.current = 'library'
+            self.page += 1
+            if self.page >= len(self.album_pages):
+                self.page = 0
+            self.do_album_grid()
         if input_string == "0": 
             print("Should go To Operator Screen!")
             self.manager.current = 'library'
 
 
     def on_pre_enter(self):
+        self.make_album_pages()
+        self.do_album_grid()
+
+    def do_album_grid(self):
         if self.album_pages is None:
             self.make_album_pages()
         grid_layout_widget = self.ids.album_layout
         for album_widget, i in zip(reversed(grid_layout_widget.children), range(len(grid_layout_widget.children))):
-            print("Widget: {}, albums on this page: {}".format(i, len(self.album_pages[self.page])))
+            #print("Widget: {}, albums on this page: {}".format(i, len(self.album_pages[self.page])))
             if len(self.album_pages[self.page]) > i:
-                print("LOOP: {}".format(self.album_pages[self.page]))
-                album_widget.ids['album_image'].source = self.album_pages[self.page].iloc[i][4]
-                album_widget.ids['dial_label'].text = str(i+1)
+                #print("LOOP: {}".format(self.album_pages[self.page]))
+                image_path = self.album_pages[self.page].iloc[i][4]
+                if len(image_path) > 3:
+                    album_widget.ids['album_image'].source = image_path
+                    album_widget.ids['dial_label'].text    = str(i+1)
+                    album_widget.ids['album_image'].color  = [1,1,1,1]
+                else:
+                    self.clear_album_widget(album_widget)
+                    album_widget.ids['dial_label'].text    = str(i+1)
             else:
-                album_widget.ids['dial_label'].text = ""
+                self.clear_album_widget(album_widget)
+                #album_widget.ids['album_image'].source = ""
+                #album_widget.ids['album_image'].color = [0,0,0,1]
+                #album_widget.ids['dial_label'].text = ""
         # Last button is next button:
         album_widget.ids['dial_label'].text = "Next"
+
+    def clear_album_widget(self, a):
+        a.ids['album_image'].source = ""
+        a.ids['album_image'].color = [0,0,0,1]
+        a.ids['dial_label'].text = ""
 
     def make_album_pages(self, n=8):
         """
