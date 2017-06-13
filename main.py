@@ -12,11 +12,24 @@ from kivy.properties import StringProperty, ListProperty #, ObjectProperty
 import sqlite3
 import random
 
-import MusicSearch
+import SubiSearch
+import SubiPlay
 #from mutagen.easyid3 import EasyID3
 
-musicSearch = MusicSearch.Search()
-analyzer    = MusicSearch.StringAnalyzer()
+musicSearch = SubiSearch.Search()
+musicPlay = SubiPlay.Play()
+analyzer    = SubiSearch.StringAnalyzer()
+
+def rgb_to_color_list(rgb_string, alpha=1.):
+    """
+    "#FFFFFF" -> (1.0, 1.0, 1.0, 1.0)
+    "000000"  -> (0.0, 0.0, 0.0, 1.0)
+    """
+    if rgb_string[0] == '#':
+        c = rgb_string[1:]
+    else:
+        c = rgb_string
+    return [int(c[i:i+2],16)/255 for i in range(0, len(c), 2)] + [alpha]
 
 
 # Create both screens. Please note the root.manager.current: this is how
@@ -189,15 +202,22 @@ class AlbumScreen(ProtoScreen):
     album_pages = None
     page = 0
 
+
     def __init__(self, *args, **kwargs):
         super(AlbumScreen, self).__init__(*args, **kwargs)
 
     def handle_input(self, input_string):
         if input_string is None:
             # Ignore return keypresses.
+            #musicPlay.pause()
+            musicPlay.pause()
             return
         if input_string in "12345678":
-            print("PLAY: {}".format(self.album_pages.iloc[int(input_string)-1][1]))
+            album = self.album_pages[self.page].iloc[int(input_string)-1]
+            album_name = album[1]
+            album_path = album[3]
+            print("[DEBUG] AlbumScreen.handle_input(): play: {}".format(album_name))
+            print("[DEBUG] AlbumScreen.handle_input(): play: {}".format(album_path))
         if input_string == "9": 
             print("Next Page")
             self.page += 1
@@ -213,6 +233,7 @@ class AlbumScreen(ProtoScreen):
         self.make_album_pages()
         self.do_album_grid()
 
+
     def do_album_grid(self):
         if self.album_pages is None:
             self.make_album_pages()
@@ -220,12 +241,17 @@ class AlbumScreen(ProtoScreen):
         for album_widget, i in zip(reversed(grid_layout_widget.children), range(len(grid_layout_widget.children))):
             #print("Widget: {}, albums on this page: {}".format(i, len(self.album_pages[self.page])))
             if len(self.album_pages[self.page]) > i:
-                #print("LOOP: {}".format(self.album_pages[self.page]))
-                image_path = self.album_pages[self.page].iloc[i][4]
+                image_path = self.album_pages[self.page].album_art[i]
                 if len(image_path) > 3:
                     album_widget.ids['album_image'].source = image_path
                     album_widget.ids['dial_label'].text    = str(i+1)
-                    album_widget.ids['album_image'].color  = [1,1,1,1]
+                    colors = musicSearch.get_album_colors(self.album_pages[self.page].album_id[i])
+                    print("COLOR!!!!! {}".format(colors))
+                    color_list = rgb_to_color_list(colors.color[0])
+                    if len(color_list) == 4:
+                        album_widget.ids['album_image'].color  = color_list
+                    else:
+                        album_widget.ids['album_image'].color  = [1,1,1,1]
                 else:
                     self.clear_album_widget(album_widget)
                     album_widget.ids['dial_label'].text    = str(i+1)

@@ -8,6 +8,15 @@ import pandas as pd
 database_file = 'dbTools/subibox.sqlite'
 conn          = sqlite3.connect(database_file)
 
+# substitutes rooth paths.
+# This is required so that root paths in db (made form master server)
+# will match paths for the file son the mpd server's machine.
+# path.replace(path_hack[0], path_hack[1]
+path_hack = [
+        '/home/equant/mnt/seagate/',
+        ''
+]
+
 class StringAnalyzer:
     """
     Analyze string and remove stop words
@@ -40,14 +49,15 @@ class Search():
         try:
             artist_id = int(artist_id)
         except ValueError:
-            print("MusicSearch.Search.get_artist_albums() [Warning] Value: {} doesn't look like an artist id.".format(artist_id))
+            print("SubiSearch.Search.get_artist_albums() [Warning] Value: {} doesn't look like an artist id.".format(artist_id))
         cursor = conn.execute("""\
                 SELECT id, full_album_name, album_year, album_path, album_art
                   FROM albums
                  WHERE artist_id = ?
               ORDER BY album_year
                  """, (artist_id,))
-        df = pd.DataFrame(cursor.fetchall())
+        df = pd.DataFrame(cursor.fetchall(), columns=['id', 'full_album_name', 'album_year', 'album_path', 'album_art'])
+        df['album_path'] = df['album_path'].str.replace(path_hack[0], path_hack[1])
         #print("Found {} albums for artist id {}".format(len(rows), artist_id))
         return df
 
@@ -106,4 +116,19 @@ class Search():
             return df.groupby(['name', 'id']).sum().sort_values(by=['score'], ascending=False).reset_index()
         else:
             return None
+
+    def get_album_colors(self, album_id):
+        try:
+            album_id = int(album_id)
+        except ValueError:
+            print("SubiSearch.Search.get_album_colors() [Warning] Value: {} doesn't look like an artist id.".format(album_id))
+        cursor = conn.execute("""\
+                SELECT color, color_sum
+                  FROM album_colors
+                 WHERE album_id = ?
+              ORDER BY color_sum
+                 """, (album_id,))
+        df = pd.DataFrame(cursor.fetchall(), columns=['color', 'color_sum'])
+        return df
+
 
