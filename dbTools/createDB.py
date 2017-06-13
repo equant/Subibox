@@ -197,12 +197,15 @@ class Index:
             return
 
         for c in colors:
-            print("Color: {}".format(c))
+            # Get sum of rgb 
+            c = c[1:]  # get rid of leading "#"
+            color_sum = sum([int(c[i:i+2],16) for i in range(0, len(c), 2)])
+            print("Color: {} ({})".format(c, color_sum))
             cursor = conn.execute("""\
                     INSERT INTO album_colors
-                                (album_id, color)
-                         VALUES (?, ?)
-                    """, (album_id, c)
+                                (album_id, color, color_sum)
+                         VALUES (?, ?, ?)
+                    """, (album_id, c, color_sum)
             )
             conn.commit()
 
