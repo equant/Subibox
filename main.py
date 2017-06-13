@@ -245,13 +245,11 @@ class AlbumScreen(ProtoScreen):
                 if len(image_path) > 3:
                     album_widget.ids['album_image'].source = image_path
                     album_widget.ids['dial_label'].text    = str(i+1)
-                    colors = musicSearch.get_album_colors(self.album_pages[self.page].album_id[i])
+                    colors = musicSearch.get_album_colors(self.album_pages[self.page].id[i])
                     print("COLOR!!!!! {}".format(colors))
-                    color_list = rgb_to_color_list(colors.color[0])
-                    if len(color_list) == 4:
-                        album_widget.ids['album_image'].color  = color_list
-                    else:
-                        album_widget.ids['album_image'].color  = [1,1,1,1]
+                    #color_list = rgb_to_color_list(colors.color[0])
+                    #album_widget.ids['album_image'].color  = color_list
+                    album_widget.ids['album_image'].color  = [1,1,1,1]
                 else:
                     self.clear_album_widget(album_widget)
                     album_widget.ids['dial_label'].text    = str(i+1)
