@@ -62,54 +62,55 @@ class Search():
         return df
 
 
-    def artist_search(self,query):
-        print("Searching artists for: {}".format(query))
+    def artist_search(self,query_list):
+        print("Searching artists")
         result = []
 
-        # -- Look for an exact match (100 pts)...
-        cursor = conn.execute("""\
-                SELECT id, dial_compatible_artist_name, full_artist_name
-                  FROM artists
-                 WHERE dial_compatible_artist_name = ?
-              GROUP BY full_artist_name
-                 """, (query,))
-        row = cursor.fetchall()
-        for i in range(len(row)):
-            artist_id        = row[i][0]
-            artist_full_name = row[i][2]
-            result.append([artist_full_name, 100, artist_id])
-            print("{}:100".format(artist_full_name, " : 100"))
+        for query in query_list:
+            # -- Look for an exact match (100 pts)...
+            cursor = conn.execute("""\
+                    SELECT id, dial_compatible_artist_name, full_artist_name
+                      FROM artists
+                     WHERE dial_compatible_artist_name = ?
+                  GROUP BY full_artist_name
+                     """, (query,))
+            row = cursor.fetchall()
+            for i in range(len(row)):
+                artist_id        = row[i][0]
+                artist_full_name = row[i][2]
+                result.append([artist_full_name, 100, artist_id])
+                print("{}:100".format(artist_full_name, " : 100"))
 
-        # -- Look for an close match (20 pts)...
-        cursor = conn.execute("""\
-                SELECT id, dial_compatible_artist_name, full_artist_name
-                  FROM artists
-                 WHERE dial_compatible_artist_name LIKE ?
-              GROUP BY full_artist_name
-                 """, (query+'%',))
-        row = cursor.fetchall()
-        for i in range(len(row)):
-            artist_id        = row[i][0]
-            artist_full_name = row[i][2]
-            result.append([artist_full_name, 20, artist_id])
-            print("{}:100".format(artist_full_name, " : 100"))
+            # -- Look for an close match (20 pts)...
+            cursor = conn.execute("""\
+                    SELECT id, dial_compatible_artist_name, full_artist_name
+                      FROM artists
+                     WHERE dial_compatible_artist_name LIKE ?
+                  GROUP BY full_artist_name
+                     """, (query+'%',))
+            row = cursor.fetchall()
+            for i in range(len(row)):
+                artist_id        = row[i][0]
+                artist_full_name = row[i][2]
+                result.append([artist_full_name, 20, artist_id])
+                print("{}:100".format(artist_full_name, " : 100"))
 
-        # -- Look for a like match (10 pts)
-        cursor = conn.execute("""\
-                SELECT a.id, a.dial_compatible_artist_name, a.full_artist_name
-                  FROM artist_search_strings as ass
-             LEFT JOIN artists a
-                    ON ass.artist_id = a.id
-                 WHERE ass.search_string
-                  LIKE ?
-              GROUP BY a.full_artist_name
-                """, (query+'%',))
-        row = cursor.fetchall()
-        for i in range(len(row)):
-            artist_id        = row[i][0]
-            artist_full_name = row[i][2]
-            result.append([artist_full_name, 10, artist_id])
-            print("{}:10".format(artist_full_name, " : 10"))
+            # -- Look for a like match (10 pts)
+            cursor = conn.execute("""\
+                    SELECT a.id, a.dial_compatible_artist_name, a.full_artist_name
+                      FROM artist_search_strings as ass
+                 LEFT JOIN artists a
+                        ON ass.artist_id = a.id
+                     WHERE ass.search_string
+                      LIKE ?
+                  GROUP BY a.full_artist_name
+                    """, (query+'%',))
+            row = cursor.fetchall()
+            for i in range(len(row)):
+                artist_id        = row[i][0]
+                artist_full_name = row[i][2]
+                result.append([artist_full_name, 10, artist_id])
+                print("{}:10".format(artist_full_name, " : 10"))
 
         if len(result) > 0:
             df = pd.DataFrame(result, columns=['name', 'score', 'id'])
