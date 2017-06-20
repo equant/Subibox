@@ -1,24 +1,29 @@
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
-#from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.label import Label
 from kivy.core.window import Window
 #from kivy.uix.widget import Widget
+import numpy as np
 
 from kivy.properties import StringProperty, ListProperty #, ObjectProperty
+
+emulate_rotary_dial = True
 
 import sqlite3
 import random
 
 import SubiSearch
 import SubiPlay
+from RotaryDial import RotaryDial
 #from mutagen.easyid3 import EasyID3
 
 musicSearch = SubiSearch.Search()
-musicPlay = SubiPlay.Play()
+musicPlay   = SubiPlay.Play()
 analyzer    = SubiSearch.StringAnalyzer()
+dial        = RotaryDial()
 
 def rgb_to_color_list(rgb_string, alpha=1.):
     """
@@ -38,13 +43,13 @@ def rgb_to_color_list(rgb_string, alpha=1.):
 Builder.load_string("""
 <SubiLabel>:
     text: "Foo"
-    font_size: 48
-    canvas:
-        Color:
-            rgba: [1,0,0,0.5]
-        Rectangle:
-            pos: self.pos  # incorrect
-            size: self.size
+    font_size: 96
+#    canvas:
+#        Color:
+#            rgba: self.background_color
+#        Rectangle:
+#            pos: self.pos  # incorrect
+#            size: self.size
 
 <AlbumArt>:
     source: 'assets/images/default_cover.jpg'
@@ -52,16 +57,16 @@ Builder.load_string("""
     Image:
         id: album_image
         source: self.source
-    #SubiLabel:
-        #id: album_name
-        #text: ""
-    SubiLabel:
-        id: dial_label
-        #size_hint_y: None
-        #height: 110
-        pos_hint: {'x': 0, 'y': 0}
-        size_hint_y: 0.15
-        size_hint_x: 0.15
+        SubiLabel:
+            id: dial_label
+            font_size: self.parent.height/3
+            pos_hint: {'x': 0.5, 'y': 0}
+            #size_hint_y: None
+            #size_hint_x: None
+            #width: self.parent.width
+            #height: self.parent.height
+            outline_color: [0,1,0,1]
+            outline_width: 3
 
         
 <AlbumScreen>:
@@ -132,12 +137,15 @@ Builder.load_string("""
 """)
 
 class AlbumArt(RelativeLayout):
+#class AlbumArt(BoxLayout):
     def build(self):
         return self
 
 
 class SubiLabel(Label):
-    #background_color = ListProperty([1,0,0,0.8])
+    default_background_color = [1,1,1,0.5]
+    default_color = [1,1,1,1]
+    background_color = ListProperty([1,1,1,0.5])
     #text = StringProperty("A")
     def build(self):
         return self
@@ -150,33 +158,76 @@ class ProtoScreen(Screen):
 
 
 class LibraryScreen(ProtoScreen):
+    """
+    search list contains a list of search strings.  It is a list because the rotary dial interface results in multiple search string
+    possibilities...
+        foo = RotaryDial.RotaryDial()
+        search_list = []
+        search_list = foo.appendNumberToList("3", search_list)
+        search_list = foo.appendNumberToList("9", search_list)
+        search_list = foo.appendNumberToList("5", search_list)
+        In [24]: search_list
+        Out[24]:
+        ['dwj',
+         'dwl',
+         'dw5',
+         'dxk',
+         'dxl',
+         'dx5',
+         'dyk',
+         'dyl',
+         ...
+
+    """
+    search_list      = ListProperty()
     search_string    = StringProperty()
     last_result_df   = None  # This is a Pandas dataframe( 'name', 'id', 'score' )
     last_artist_name = StringProperty()  # This is a Pandas dataframe( 'name', 'id', 'score' )
 
     def __init__(self, *args, **kwargs):
+        print("Begin Library Screen init()")
         super(LibraryScreen, self).__init__(*args, **kwargs)
         self.bind(last_artist_name=self.set_search_label)
+        print("End Library Screen init()")
 
     def on_pre_enter(self):
+        print("Begin Library Screen on_pre_enter()")
         self.search_string    = ""
+        self.search_list      = []
         self.last_result_df   = None
         self.last_artist_name = ""
+        print("End Library Screen on_pre_enter()")
 
     def handle_input(self, input_string):
 
+        do_search = False
+
         if input_string is None:
+            # User pressed Return
             self.switch_to_album_screen()
             return
 
-        self.search_string += input_string
-        result = musicSearch.artist_search(self.search_string)
-        if result is None:
-            self.search_string = ""
-            self.last_result_df = None
+        if emulate_rotary_dial:
+            if input_string in "23456789":
+                print("DEBUG: rotary input: {}".format(input_string))
+                self.search_list = dial.rotaryNumberToList(input_string, self.search_list)
+                do_search = True
+            if input_string == "1":
+                self.switch_to_album_screen()
+                return
         else:
-            self.last_result = result
-            self.last_artist_name = result['name'][0]
+            if input_string.isalpha():
+                self.search_list[0] += input_string
+                do_search = True
+
+        if do_search:
+            result = musicSearch.artist_search(self.search_list)
+            if result is None:
+                self.search_list = []
+                self.last_result_df = None
+            else:
+                self.last_result = result
+                self.last_artist_name = result['name'][0]
 
 
     # -- bound to self.last_artist_name
@@ -246,13 +297,18 @@ class AlbumScreen(ProtoScreen):
                     album_widget.ids['album_image'].source = image_path
                     album_widget.ids['dial_label'].text    = str(i+1)
                     colors = musicSearch.get_album_colors(self.album_pages[self.page].id[i])
-                    print("COLOR!!!!! {}".format(colors))
-                    #color_list = rgb_to_color_list(colors.color[0])
-                    #album_widget.ids['album_image'].color  = color_list
+                    album_widget.ids['dial_label'].background_color = rgb_to_color_list(colors.color[1], 0.5)
+                    #album_widget.ids['dial_label'].color = [1,1,1,1]
+                    c = 1 - np.array(rgb_to_color_list(colors.color[1], 0.2))
+                    #album_widget.ids['dial_label'].color = rgb_to_color_list(colors.color[2], 0.9)
+                    album_widget.ids['dial_label'].color =  c
+                    album_widget.ids['dial_label'].outline_color =  rgb_to_color_list(colors.color[1], 0.9)
                     album_widget.ids['album_image'].color  = [1,1,1,1]
                 else:
                     self.clear_album_widget(album_widget)
                     album_widget.ids['dial_label'].text    = str(i+1)
+                    album_widget.ids['dial_label'].color = [1,1,1,1]
+                    album_widget.ids['dial_label'].outline_color =  [.9,.9,.9, 1]
             else:
                 self.clear_album_widget(album_widget)
                 #album_widget.ids['album_image'].source = ""
@@ -260,11 +316,15 @@ class AlbumScreen(ProtoScreen):
                 #album_widget.ids['dial_label'].text = ""
         # Last button is next button:
         album_widget.ids['dial_label'].text = "Next"
+        album_widget.ids['dial_label'].color = [1,1,1,1]
+        album_widget.ids['dial_label'].outline_color =  [.9,.9,.9, 1]
 
     def clear_album_widget(self, a):
         a.ids['album_image'].source = ""
         a.ids['album_image'].color = [0,0,0,1]
         a.ids['dial_label'].text = ""
+        a.ids['dial_label'].background_color = a.ids['dial_label'].default_background_color
+        a.ids['dial_label'].color = a.ids['dial_label'].default_color
 
     def make_album_pages(self, n=8):
         """
@@ -315,6 +375,7 @@ class SubiboxApp(App):
 
     def build(self):
         # Create the screen manager
+        print("Building SubiboxApp")
         self.sm = ScreenManager()
         self.sm.transition = FadeTransition()
         self.sm.add_widget(LibraryScreen(name='library'))
