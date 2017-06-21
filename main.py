@@ -260,8 +260,6 @@ class AlbumScreen(ProtoScreen):
     def handle_input(self, input_string):
         if input_string is None:
             # Ignore return keypresses.
-            #musicPlay.pause()
-            musicPlay.pause()
             return
         if input_string in "12345678":
             album = self.album_pages[self.page].iloc[int(input_string)-1]
@@ -269,6 +267,7 @@ class AlbumScreen(ProtoScreen):
             album_path = album[3]
             print("[DEBUG] AlbumScreen.handle_input(): play: {}".format(album_name))
             print("[DEBUG] AlbumScreen.handle_input(): play: {}".format(album_path))
+            musicPlay.play_album(album_path)
         if input_string == "9": 
             print("Next Page")
             self.page += 1
@@ -290,13 +289,13 @@ class AlbumScreen(ProtoScreen):
             self.make_album_pages()
         grid_layout_widget = self.ids.album_layout
         for album_widget, i in zip(reversed(grid_layout_widget.children), range(len(grid_layout_widget.children))):
-            #print("Widget: {}, albums on this page: {}".format(i, len(self.album_pages[self.page])))
+            print("Widget: {}, albums on this page: {}".format(i, len(self.album_pages[self.page])))
             if len(self.album_pages[self.page]) > i:
-                image_path = self.album_pages[self.page].album_art[i]
+                image_path = self.album_pages[self.page].album_art.iloc[i]
                 if len(image_path) > 3:
                     album_widget.ids['album_image'].source = image_path
                     album_widget.ids['dial_label'].text    = str(i+1)
-                    colors = musicSearch.get_album_colors(self.album_pages[self.page].id[i])
+                    colors = musicSearch.get_album_colors(self.album_pages[self.page].id.iloc[i])
                     album_widget.ids['dial_label'].background_color = rgb_to_color_list(colors.color[1], 0.5)
                     #album_widget.ids['dial_label'].color = [1,1,1,1]
                     c = 1 - np.array(rgb_to_color_list(colors.color[1], 0.2))
@@ -315,9 +314,10 @@ class AlbumScreen(ProtoScreen):
                 #album_widget.ids['album_image'].color = [0,0,0,1]
                 #album_widget.ids['dial_label'].text = ""
         # Last button is next button:
-        album_widget.ids['dial_label'].text = "Next"
-        album_widget.ids['dial_label'].color = [1,1,1,1]
-        album_widget.ids['dial_label'].outline_color =  [.9,.9,.9, 1]
+        if len(self.album_pages) > self.page:
+            album_widget.ids['dial_label'].text = "Next"
+            album_widget.ids['dial_label'].color = [1,1,1,1]
+            album_widget.ids['dial_label'].outline_color =  [.9,.9,.9, 1]
 
     def clear_album_widget(self, a):
         a.ids['album_image'].source = ""
