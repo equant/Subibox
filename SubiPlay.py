@@ -11,6 +11,7 @@
 from mpd import MPDClient
 
 mpd_host = "192.168.1.80"
+mpd_host = "localhost"
 mpd_port = "6600"
 
 #client.close()                     # send the close command
@@ -34,7 +35,9 @@ class Play():
             print("[DEBUG][SubiPlay.Play.pause()")
             self.client.pause()
 
-    def play_album(self):
+    def play_album(self, album_path):
         # mpc -h 192.168.1.80 -p 6600 listall Yeah_Yeah_Yeahs/
-        pass
+        self.client.clear()
+        self.client.add(album_path)
+        self.client.play()
 

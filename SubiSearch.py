@@ -16,6 +16,10 @@ path_hack = [
         '/home/equant/mnt/seagate/',
         ''
 ]
+path_hack = [
+        '/home/equant/beets/',
+        ''
+]
 
 class StringAnalyzer:
     """
