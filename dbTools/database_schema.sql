@@ -3,7 +3,6 @@ CREATE TABLE artists(
     dial_compatible_artist_name,
     full_artist_name
 );
-
 CREATE TABLE albums(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     artist_id,
@@ -13,12 +12,10 @@ CREATE TABLE albums(
     album_year,
     album_art
 );
-
 CREATE TABLE album_colors(
     album_id,
     color
-);
-
+, color_sum);
 CREATE TABLE artist_search_strings(
     search_string,
     artist_id,
