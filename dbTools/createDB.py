@@ -11,6 +11,7 @@ from colorz import colorz
 #dsn = '/Users/mickael/python_sandbox/tags/id3.sqlite'
 database_file = 'subibox.sqlite'
 music_path = '/home/equant/beets'
+#music_path = '/mnt/toshiba/beets/'
 
 class StringAnalyzer:
     """
@@ -129,6 +130,9 @@ class Index:
                         else:
                             album_name = album_dir
 
+                    if album_name is None:
+                        print("Skipping album_root_path: {}".format(album_root_path))
+                        break
 
                     full_album_name = album_name.replace("_", " ")
                     dial_compatible_album_name = album_name.replace("_", "").lower()
@@ -188,7 +192,11 @@ class Index:
 
     def write_album_art_colors(self, album_id, album_path, conn):
         print("DEBUG: Write colors {} {}".format(album_id, album_path))
-        colors = list(colorz(album_path))
+        try:
+            colors = list(colorz(album_path))
+        except OSError:
+            print("Error with album_path: {}".format(album_path))
+            return
         print("DEBUG: Colors: {}".format(colors))
         if len(colors) > 0:
             self.delete_album_colors(album_id, conn)
