@@ -107,6 +107,24 @@ Builder.load_string("""
             id: 9
             text: "9"
 
+<PlayingScreen>:
+    id: playing_screen
+    BoxLayout:
+        id: layout
+        orientation: 'vertical'
+        Label:
+            id: artist
+            text: self.parent.parent.artist
+            font_size: 48
+        Label:
+            id: album
+            text: self.parent.parent.album
+            font_size: 48
+        Label:
+            id: title
+            text: self.parent.parent.title
+            font_size: 48
+
 <LibraryScreen>:
     id: library_screen
     BoxLayout:
@@ -156,6 +174,38 @@ class ProtoScreen(Screen):
     def handle_input(self, input_string):
         pass
 
+class PlayingScreen(ProtoScreen):
+
+    artist = StringProperty()
+    album  = StringProperty()
+    title   = StringProperty()
+
+    #def __init__(self, *args, **kwargs):
+        #super(PlayingScreen, self).__init__(*args, **kwargs)
+
+    def on_pre_enter(self):
+        self.current_track_event = Clock.schedule_interval(update_track_info, 2.)
+    def on_pre_leave(self):
+        pass
+        self.current_track_event
+
+
+    def handle_input(self, input_string):
+        print("PlayScreen.handle_input() got {}".format(input_string))
+        if input_string == "1":
+            musicPlay.pause()
+        if input_string == "2":
+            self.manager.current = 'albums'
+        if input_string == "9":
+            musicPlay.nextTrack()
+        if input_string == "0":
+            self.manager.current = 'library'
+
+    def update_track_info(self):
+        self.current_track_info = musicPlay.current_track_info()
+        self.artist = self.current_track_info['artist']
+        self.album = self.current_track_info['album']
+        self.title = self.current_track_info['title']
 
 class LibraryScreen(ProtoScreen):
     """
@@ -185,18 +235,14 @@ class LibraryScreen(ProtoScreen):
     last_artist_name = StringProperty()  # This is a Pandas dataframe( 'name', 'id', 'score' )
 
     def __init__(self, *args, **kwargs):
-        print("Begin Library Screen init()")
         super(LibraryScreen, self).__init__(*args, **kwargs)
         self.bind(last_artist_name=self.set_search_label)
-        print("End Library Screen init()")
 
     def on_pre_enter(self):
-        print("Begin Library Screen on_pre_enter()")
         self.search_string    = ""
         self.search_list      = []
         self.last_result_df   = None
         self.last_artist_name = ""
-        print("End Library Screen on_pre_enter()")
 
     def handle_input(self, input_string):
 
@@ -209,7 +255,7 @@ class LibraryScreen(ProtoScreen):
 
         if emulate_rotary_dial:
             if input_string in "23456789":
-                print("DEBUG: rotary input: {}".format(input_string))
+                #print("DEBUG: rotary input: {}".format(input_string))
                 self.search_list = dial.rotaryNumberToList(input_string, self.search_list)
                 do_search = True
             if input_string == "1":
@@ -244,6 +290,7 @@ class SettingsScreen(ProtoScreen):
     pass
 
 
+
 class AlbumScreen(ProtoScreen):
     """
     Album Dataframe: id, full_album_name, album_year, album_path, album_art
@@ -262,14 +309,16 @@ class AlbumScreen(ProtoScreen):
             # Ignore return keypresses.
             return
         if input_string in "12345678":
-            album = self.album_pages[self.page].iloc[int(input_string)-1]
-            album_name = album[1]
-            album_path = album[3]
-            print("[DEBUG] AlbumScreen.handle_input(): play: {}".format(album_name))
-            print("[DEBUG] AlbumScreen.handle_input(): play: {}".format(album_path))
-            musicPlay.play_album(album_path)
+            if int(input_string) <= len(self.album_pages[self.page]):
+                album = self.album_pages[self.page].iloc[int(input_string)-1]
+                album_name = album[1]
+                album_path = album[3]
+                #print("[DEBUG] AlbumScreen.handle_input(): play: {}".format(album_name))
+                #print("[DEBUG] AlbumScreen.handle_input(): play: {}".format(album_path))
+                musicPlay.play_album(album_path)
+                self.manager.current = 'playing'
         if input_string == "9": 
-            print("Next Page")
+            #print("Next Page")
             self.page += 1
             if self.page >= len(self.album_pages):
                 self.page = 0
@@ -289,7 +338,7 @@ class AlbumScreen(ProtoScreen):
             self.make_album_pages()
         grid_layout_widget = self.ids.album_layout
         for album_widget, i in zip(reversed(grid_layout_widget.children), range(len(grid_layout_widget.children))):
-            print("Widget: {}, albums on this page: {}".format(i, len(self.album_pages[self.page])))
+            #print("Widget: {}, albums on this page: {}".format(i, len(self.album_pages[self.page])))
             if len(self.album_pages[self.page]) > i:
                 image_path = self.album_pages[self.page].album_art.iloc[i]
                 if len(image_path) > 3:
@@ -356,7 +405,6 @@ class AlbumScreen(ProtoScreen):
 class MyManager(ScreenManager):
     def get_screen(self, name):
         for _ in self.screens:
-            print("Looking for screen: {} / {}".format(name, _.name))
             if _.name == name:
                 return _
         return None
@@ -367,7 +415,6 @@ class SubiboxApp(App):
 
     def get_screen(self, name):
         for _ in self.sm.screens:
-            print("Looking for screen: {} / {}".format(name, _.name))
             if _.name == name:
                 return _
         return None
@@ -375,17 +422,16 @@ class SubiboxApp(App):
 
     def build(self):
         # Create the screen manager
-        print("Building SubiboxApp")
         self.sm = ScreenManager()
         self.sm.transition = FadeTransition()
         self.sm.add_widget(LibraryScreen(name='library'))
         self.sm.add_widget(SettingsScreen(name='settings'))
         self.sm.add_widget(AlbumScreen(name='albums'))
+        self.sm.add_widget(PlayingScreen(name='playing'))
         Window.bind(on_key_down=self._on_keyboard_down)
         return self.sm
 
     def _on_keyboard_down(self, *args):
-        #print("Got a key down event: {}".format(args))
         self.sm.current_screen.handle_input(args[3])
         return True
 

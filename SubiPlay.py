@@ -8,6 +8,7 @@
 #database_file = 'dbTools/subibox.sqlite'
 #conn          = sqlite3.connect(database_file)
 
+import mpd
 from mpd import MPDClient
 
 mpd_host = "192.168.1.80"
@@ -20,22 +21,38 @@ mpd_port = "6600"
 class Play():
 
     def __init__(self):
-        client = MPDClient()               # create client object
-        client.timeout = 10                # network timeout in seconds (floats allowed), default: None
-        client.idletimeout = None          # timeout for fetching the result of the idle command is handled seperately, default: None
+        self.client = MPDClient()               # create client object
+        #client.timeout = 10                # network timeout in seconds (floats allowed), default: None
+        #client.idletimeout = None          # timeout for fetching the result of the idle command is handled seperately, default: None
+        #self.connect()
+
+    def connect(self):
         try:
-            client.connect(mpd_host, mpd_port)  # connect to localhost:6600
-            print("MPD Version: " + client.mpd_version)          # print the MPD version
-            self.client = client
+            self.client.connect(mpd_host, mpd_port)
+            print("MPD Version: " + self.client.mpd_version)          # print the MPD version
         except OSError:
-            self.client = None
+            print("Error connecting to MPD")
+        except mpd.ConnectionError:
+            # Already connected?
+            pass
+
+    def current_track_info(self):
+        self.connect()
+        print("[DEBUG][SubiPlay.Play.current_track()")
+        return self.client.currentsong()
+
+    def next_track(self):
+        self.connect()
+        print("[DEBUG][SubiPlay.Play.next_track()")
+        self.client.next()
 
     def pause(self):
-        if self.client is not None:
-            print("[DEBUG][SubiPlay.Play.pause()")
-            self.client.pause()
+        self.connect()
+        print("[DEBUG][SubiPlay.Play.pause()")
+        self.client.pause()
 
     def play_album(self, album_path):
+        self.connect()
         # mpc -h 192.168.1.80 -p 6600 listall Yeah_Yeah_Yeahs/
         self.client.clear()
         self.client.add(album_path)
