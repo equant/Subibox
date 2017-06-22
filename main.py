@@ -10,6 +10,12 @@ import numpy as np
 
 from kivy.properties import StringProperty, ListProperty #, ObjectProperty
 
+from kivy.core.text import LabelBase
+LabelBase.register(name       = "Avenir",
+                   fn_regular = "assets/avenir.ttf")
+LabelBase.register(name       = "paraaminobenzoic",
+                   fn_regular = "assets/paraaminobenzoic.ttf")
+
 emulate_rotary_dial = True
 
 import sqlite3
@@ -44,6 +50,7 @@ Builder.load_string("""
 <SubiLabel>:
     text: "Foo"
     font_size: 96
+    font_name: "paraaminobenzoic"
 #    canvas:
 #        Color:
 #            rgba: self.background_color
@@ -116,14 +123,17 @@ Builder.load_string("""
             id: artist
             text: self.parent.parent.artist
             font_size: 48
+            font_name: "Avenir"
         Label:
             id: album
             text: self.parent.parent.album
             font_size: 48
+            font_name: "Avenir"
         Label:
             id: title
             text: self.parent.parent.title
             font_size: 48
+            font_name: "Avenir"
 
 <LibraryScreen>:
     id: library_screen
@@ -136,6 +146,7 @@ Builder.load_string("""
             id: search_string_label
             text: 'Dial Something...'
             font_size: 48
+            font_name: "Avenir"
         Label:
             text: ''
 #        Button:
