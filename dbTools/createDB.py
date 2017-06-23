@@ -10,8 +10,13 @@ from colorz import colorz
 # change this path to your sqlite database
 #dsn = '/Users/mickael/python_sandbox/tags/id3.sqlite'
 database_file = 'subibox.sqlite'
-music_path = '/home/equant/beets'
-#music_path = '/mnt/toshiba/beets/'
+#music_path = '/home/equant/beets'
+music_path = '/mnt/toshiba/beets/'
+
+art_path_hack = [
+        '/mnt/toshiba/',
+        '/mnt/jukebox/',
+]
 
 class StringAnalyzer:
     """
@@ -141,6 +146,9 @@ class Index:
                     if os.path.isfile(album_root_path + "/cover.jpg"):
                         album_art_path = album_root_path + "/cover.jpg"
 
+                    album_path     = album_root_path.replace(music_path, "")
+                    album_art_path = album_art_path.replace(art_path_hack[0], art_path_hack[1])
+
                     #print("    album name: {}".format(full_album_name))
                     #words = analyzer.analyze(full_album_name)
                     #print("    words:      {}".format(words))
@@ -169,7 +177,7 @@ class Index:
                                             album_year,
                                             album_art)
                                 VALUES (?, ?, ?, ?, ?, ?)""",
-                                (artist_id, dial_compatible_album_name, full_album_name, album_root_path, album_year, album_art_path))
+                                (artist_id, dial_compatible_album_name, full_album_name, album_path, album_year, album_art_path))
 
                         conn.commit()
                         album_id = cursor.lastrowid
