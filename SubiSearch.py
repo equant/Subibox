@@ -2,24 +2,13 @@
 
 import os, sys, re, time
 import sqlite3
-import pandas as pd
+#import pandas as pd
+from collections import Counter
 
 #database_file = 'dbTools/subibox.sqlite.full'
-database_file = 'dbTools/subibox.sqlite'
-conn          = sqlite3.connect(database_file)
-
-# substitutes rooth paths.
-# This is required so that root paths in db (made form master server)
-# will match paths for the file son the mpd server's machine.
-# path.replace(path_hack[0], path_hack[1]
-path_hack = [
-        '/home/equant/mnt/seagate/',
-        ''
-]
-path_hack = [
-        '/home/equant/beets/',
-        ''
-]
+database_file    = 'dbTools/subibox.sqlite'
+conn             = sqlite3.connect(database_file)
+conn.row_factory = sqlite3.Row
 
 class StringAnalyzer:
     """
@@ -60,10 +49,7 @@ class Search():
                  WHERE artist_id = ?
               ORDER BY album_year
                  """, (artist_id,))
-        df = pd.DataFrame(cursor.fetchall(), columns=['id', 'full_album_name', 'album_year', 'album_path', 'album_art'])
-        df['album_path'] = df['album_path'].str.replace(path_hack[0], path_hack[1])
-        #print("Found {} albums for artist id {}".format(len(rows), artist_id))
-        return df
+        return cursor.fetchall()
 
 
     def artist_search(self,query_list):
@@ -117,8 +103,27 @@ class Search():
                 print("{}:10".format(artist_full_name, " : 10"))
 
         if len(result) > 0:
-            df = pd.DataFrame(result, columns=['name', 'score', 'id'])
-            return df.groupby(['name', 'id']).sum().sort_values(by=['score'], ascending=False).reset_index()
+            # result looks like this...
+            #['name', 'score', 'id'])
+            # ...but we need to group duplicate scores.  We use a Counter() do to this
+            # and make a dict to connect names and ids so we can remake result as
+            # new_result, which has the same columns, but no duplicates.
+            c = Counter()
+            id_map = {}
+            for artist_name, score, artist_id in result:
+                id_map[artist_name] = artist_id
+                c.update({artist_name: score})
+            #print(list(c.items()))
+            sorted_grouped_results = []
+            for artist_name, score in sorted(c.items(), key=lambda x: x[1], reverse=True):
+                d = {
+                        'name'      : artist_name,
+                        'score'     : score,
+                        'id'        : id_map[artist_name]
+                    }
+                sorted_grouped_results.append(d)
+            # Sort list by second column (score)...
+            return sorted_grouped_results
         else:
             return None
 
@@ -133,7 +138,7 @@ class Search():
                  WHERE album_id = ?
               ORDER BY color_sum
                  """, (album_id,))
-        df = pd.DataFrame(cursor.fetchall(), columns=['color', 'color_sum'])
-        return df
+        #df = pd.DataFrame(cursor.fetchall(), columns=['color', 'color_sum'])
+        return cursor.fetchall()
 
 
