@@ -5,10 +5,9 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.label import Label
 from kivy.core.window import Window
-#from kivy.uix.widget import Widget
 import numpy as np
 
-from kivy.properties import StringProperty, ListProperty #, ObjectProperty
+from kivy.properties import StringProperty, ListProperty
 
 from kivy.core.text import LabelBase
 LabelBase.register(name       = "Avenir",
@@ -24,7 +23,6 @@ import random
 import SubiSearch
 import SubiPlay
 from RotaryDial import RotaryDial
-#from mutagen.easyid3 import EasyID3
 
 musicSearch = SubiSearch.Search()
 musicPlay   = SubiPlay.Play()
@@ -284,7 +282,7 @@ class LibraryScreen(ProtoScreen):
                 self.last_result_df = None
             else:
                 self.last_result = result
-                self.last_artist_name = result['name'][0]
+                self.last_artist_name = result[0]['name']
 
 
     # -- bound to self.last_artist_name
@@ -293,7 +291,7 @@ class LibraryScreen(ProtoScreen):
         
     # -- Due to pressing "enter" in self.handle_input()
     def switch_to_album_screen(self):
-        artist_id = self.last_result['id'][0]
+        artist_id = self.last_result[0]['id']
         self.manager.get_screen('albums').albums = musicSearch.get_artist_albums(int(artist_id))
         self.manager.current = 'albums'
 
@@ -321,9 +319,9 @@ class AlbumScreen(ProtoScreen):
             return
         if input_string in "12345678":
             if int(input_string) <= len(self.album_pages[self.page]):
-                album = self.album_pages[self.page].iloc[int(input_string)-1]
-                album_name = album[1]
-                album_path = album[3]
+                album = self.album_pages[self.page][int(input_string)-1]
+                album_name = album['full_album_name']
+                album_path = album['album_path']
                 #print("[DEBUG] AlbumScreen.handle_input(): play: {}".format(album_name))
                 #print("[DEBUG] AlbumScreen.handle_input(): play: {}".format(album_path))
                 musicPlay.play_album(album_path)
@@ -351,17 +349,17 @@ class AlbumScreen(ProtoScreen):
         for album_widget, i in zip(reversed(grid_layout_widget.children), range(len(grid_layout_widget.children))):
             #print("Widget: {}, albums on this page: {}".format(i, len(self.album_pages[self.page])))
             if len(self.album_pages[self.page]) > i:
-                image_path = self.album_pages[self.page].album_art.iloc[i]
+                image_path = self.album_pages[self.page][i]['album_art']
                 if len(image_path) > 3:
                     album_widget.ids['album_image'].source = image_path
                     album_widget.ids['dial_label'].text    = str(i+1)
-                    colors = musicSearch.get_album_colors(self.album_pages[self.page].id.iloc[i])
-                    album_widget.ids['dial_label'].background_color = rgb_to_color_list(colors.color[1], 0.5)
+                    colors = musicSearch.get_album_colors(self.album_pages[self.page][i]['id'])
+                    album_widget.ids['dial_label'].background_color = rgb_to_color_list(colors[1]['color'], 0.5)
                     #album_widget.ids['dial_label'].color = [1,1,1,1]
-                    c = 1 - np.array(rgb_to_color_list(colors.color[1], 0.2))
+                    c = 1 - np.array(rgb_to_color_list(colors[1]['color'], 0.2))
                     #album_widget.ids['dial_label'].color = rgb_to_color_list(colors.color[2], 0.9)
                     album_widget.ids['dial_label'].color =  c
-                    album_widget.ids['dial_label'].outline_color =  rgb_to_color_list(colors.color[1], 0.9)
+                    album_widget.ids['dial_label'].outline_color =  rgb_to_color_list(colors[1]['color'], 0.9)
                     album_widget.ids['album_image'].color  = [1,1,1,1]
                 else:
                     self.clear_album_widget(album_widget)
