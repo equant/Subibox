@@ -354,12 +354,13 @@ class AlbumScreen(ProtoScreen):
                     album_widget.ids['album_image'].source = image_path
                     album_widget.ids['dial_label'].text    = str(i+1)
                     colors = musicSearch.get_album_colors(self.album_pages[self.page][i]['id'])
-                    album_widget.ids['dial_label'].background_color = rgb_to_color_list(colors[1]['color'], 0.5)
-                    #album_widget.ids['dial_label'].color = [1,1,1,1]
-                    c = 1 - np.array(rgb_to_color_list(colors[1]['color'], 0.2))
-                    #album_widget.ids['dial_label'].color = rgb_to_color_list(colors.color[2], 0.9)
-                    album_widget.ids['dial_label'].color =  c
-                    album_widget.ids['dial_label'].outline_color =  rgb_to_color_list(colors[1]['color'], 0.9)
+                    if len(colors) == 3:
+                        album_widget.ids['dial_label'].background_color = rgb_to_color_list(colors[1]['color'], 0.5)
+                        #album_widget.ids['dial_label'].color = [1,1,1,1]
+                        c = 1 - np.array(rgb_to_color_list(colors[1]['color'], 0.2))
+                        #album_widget.ids['dial_label'].color = rgb_to_color_list(colors.color[2], 0.9)
+                        album_widget.ids['dial_label'].color =  c
+                        album_widget.ids['dial_label'].outline_color =  rgb_to_color_list(colors[1]['color'], 0.9)
                     album_widget.ids['album_image'].color  = [1,1,1,1]
                 else:
                     self.clear_album_widget(album_widget)
