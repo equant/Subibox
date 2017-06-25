@@ -54,7 +54,8 @@ class Play():
     def play_album(self, album_path):
         self.connect()
         # mpc -h 192.168.1.80 -p 6600 listall Yeah_Yeah_Yeahs/
+        print("Requesting mpd play album: {}".format(album_path))
         self.client.clear()
-        self.client.add(album_path)
+        self.client.add(album_path[1:])     # [1:] to strip leading /
         self.client.play()
 
