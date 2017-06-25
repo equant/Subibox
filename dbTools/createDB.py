@@ -10,8 +10,8 @@ from colorz import colorz
 # change this path to your sqlite database
 #dsn = '/Users/mickael/python_sandbox/tags/id3.sqlite'
 database_file = 'subibox.sqlite'
-#music_path = '/home/equant/beets'
-music_path = '/mnt/toshiba/beets/'
+music_path = '/home/equant/beets'
+#music_path = '/mnt/toshiba/beets/'
 
 art_path_hack = [
         '/mnt/toshiba/',

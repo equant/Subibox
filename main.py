@@ -1,3 +1,4 @@
+import time, random, sqlite3
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
@@ -5,6 +6,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.label import Label
 from kivy.core.window import Window
+from kivy.clock import Clock
 import numpy as np
 
 from kivy.properties import StringProperty, ListProperty
@@ -17,9 +19,6 @@ LabelBase.register(name       = "paraaminobenzoic",
 
 emulate_rotary_dial = True
 
-import sqlite3
-import random
-
 import SubiSearch
 import SubiPlay
 from RotaryDial import RotaryDial
@@ -28,6 +27,15 @@ musicSearch = SubiSearch.Search()
 musicPlay   = SubiPlay.Play()
 analyzer    = SubiSearch.StringAnalyzer()
 dial        = RotaryDial()
+
+def timing(f):
+    def wrap(*args):
+        time1 = time.time()
+        ret = f(*args)
+        time2 = time.time()
+        print('{} function took {:0.3f} ms'.format(f.__name__, (time2-time1)*1000.0))
+        return ret
+    return wrap
 
 def rgb_to_color_list(rgb_string, alpha=1.):
     """
@@ -193,10 +201,10 @@ class PlayingScreen(ProtoScreen):
         #super(PlayingScreen, self).__init__(*args, **kwargs)
 
     def on_pre_enter(self):
-        self.current_track_event = Clock.schedule_interval(update_track_info, 2.)
+        self.current_track_event = Clock.schedule_interval(self.update_track_info, 2.)
     def on_pre_leave(self):
         pass
-        self.current_track_event
+        self.current_track_event.cancel()
 
 
     def handle_input(self, input_string):
@@ -210,7 +218,7 @@ class PlayingScreen(ProtoScreen):
         if input_string == "0":
             self.manager.current = 'library'
 
-    def update_track_info(self):
+    def update_track_info(self, event):
         self.current_track_info = musicPlay.current_track_info()
         self.artist = self.current_track_info['artist']
         self.album = self.current_track_info['album']
@@ -253,6 +261,7 @@ class LibraryScreen(ProtoScreen):
         self.last_result_df   = None
         self.last_artist_name = ""
 
+    #@timing
     def handle_input(self, input_string):
 
         do_search = False

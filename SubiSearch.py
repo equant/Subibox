@@ -10,6 +10,15 @@ database_file    = 'dbTools/subibox.sqlite'
 conn             = sqlite3.connect(database_file)
 conn.row_factory = sqlite3.Row
 
+def timing(f):
+    def wrap(*args):
+        time1 = time.time()
+        ret = f(*args)
+        time2 = time.time()
+        print('{} function took {:0.3f} ms'.format(f.__name__, (time2-time1)*1000.0))
+        return ret
+    return wrap
+
 class StringAnalyzer:
     """
     Analyze string and remove stop words
@@ -52,12 +61,14 @@ class Search():
         return cursor.fetchall()
 
 
+    @timing
     def artist_search(self,query_list):
-        print("Searching artists")
+        print("Searching artists, query_list has {} items in it".format(len(query_list)))
         result = []
 
         for query in query_list:
             # -- Look for an exact match (100 pts)...
+            time1 = time.time()
             cursor = conn.execute("""\
                     SELECT id, dial_compatible_artist_name, full_artist_name
                       FROM artists
@@ -69,8 +80,11 @@ class Search():
                 artist_id        = row[i][0]
                 artist_full_name = row[i][2]
                 result.append([artist_full_name, 100, artist_id])
-                print("{}:100".format(artist_full_name, " : 100"))
+                #print("{}:100".format(artist_full_name, " : 100"))
+            time2 = time.time()
+            print('Exact Matches took {:0.3f} ms'.format((time2-time1)*1000.0))
 
+            time1 = time.time()
             # -- Look for an close match (20 pts)...
             cursor = conn.execute("""\
                     SELECT id, dial_compatible_artist_name, full_artist_name
@@ -83,8 +97,11 @@ class Search():
                 artist_id        = row[i][0]
                 artist_full_name = row[i][2]
                 result.append([artist_full_name, 20, artist_id])
-                print("{}:100".format(artist_full_name, " : 100"))
+                #print("{}:100".format(artist_full_name, " : 100"))
+            time2 = time.time()
+            print('Close (^) Matches took {:0.3f} ms'.format((time2-time1)*1000.0))
 
+            time1 = time.time()
             # -- Look for a like match (10 pts)
             cursor = conn.execute("""\
                     SELECT a.id, a.dial_compatible_artist_name, a.full_artist_name
@@ -94,15 +111,19 @@ class Search():
                      WHERE ass.search_string
                       LIKE ?
                   GROUP BY a.full_artist_name
-                    """, (query+'%',))
+                    """, ('%'+query+'%',))
             row = cursor.fetchall()
             for i in range(len(row)):
                 artist_id        = row[i][0]
                 artist_full_name = row[i][2]
                 result.append([artist_full_name, 10, artist_id])
-                print("{}:10".format(artist_full_name, " : 10"))
+                #print("{}:10".format(artist_full_name, " : 10"))
+            time2 = time.time()
+            print('Any (*) Matches took {:0.3f} ms'.format((time2-time1)*1000.0))
+
 
         if len(result) > 0:
+            time1 = time.time()
             # result looks like this...
             #['name', 'score', 'id'])
             # ...but we need to group duplicate scores.  We use a Counter() do to this
@@ -123,6 +144,8 @@ class Search():
                     }
                 sorted_grouped_results.append(d)
             # Sort list by second column (score)...
+            time2 = time.time()
+            print('Sorting took {:0.3f} ms'.format((time2-time1)*1000.0))
             return sorted_grouped_results
         else:
             return None
