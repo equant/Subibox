@@ -65,44 +65,21 @@ class Search():
     def artist_search(self,query_list):
         print("Searching artists, query_list has {} items in it".format(len(query_list)))
         result = []
+        new_query_list = query_list
+        print("___{}".format(",".join(query_list)))
 
         for query in query_list:
-            # -- Look for an exact match (100 pts)...
-            time1 = time.time()
-            cursor = conn.execute("""\
-                    SELECT id, dial_compatible_artist_name, full_artist_name
-                      FROM artists
-                     WHERE dial_compatible_artist_name = ?
-                  GROUP BY full_artist_name
-                     """, (query,))
-            row = cursor.fetchall()
-            for i in range(len(row)):
-                artist_id        = row[i][0]
-                artist_full_name = row[i][2]
-                result.append([artist_full_name, 100, artist_id])
-                #print("{}:100".format(artist_full_name, " : 100"))
-            time2 = time.time()
-            print('Exact Matches took {:0.3f} ms'.format((time2-time1)*1000.0))
+            """
+            (1) Look for any match     (%string%)
+            (2) Look for leading match (string%)
+            (3) Look for exact match   (string)
+            If there are no matches found at any step, the string is removed from the
+            query list (and the new truncated query_list is returned along with the
+            query results)
+            """
 
             time1 = time.time()
-            # -- Look for an close match (20 pts)...
-            cursor = conn.execute("""\
-                    SELECT id, dial_compatible_artist_name, full_artist_name
-                      FROM artists
-                     WHERE dial_compatible_artist_name LIKE ?
-                  GROUP BY full_artist_name
-                     """, (query+'%',))
-            row = cursor.fetchall()
-            for i in range(len(row)):
-                artist_id        = row[i][0]
-                artist_full_name = row[i][2]
-                result.append([artist_full_name, 20, artist_id])
-                #print("{}:100".format(artist_full_name, " : 100"))
-            time2 = time.time()
-            print('Close (^) Matches took {:0.3f} ms'.format((time2-time1)*1000.0))
-
-            time1 = time.time()
-            # -- Look for a like match (10 pts)
+            # -(1)- Look for a like match (10 pts)
             cursor = conn.execute("""\
                     SELECT a.id, a.dial_compatible_artist_name, a.full_artist_name
                       FROM artist_search_strings as ass
@@ -110,16 +87,57 @@ class Search():
                         ON ass.artist_id = a.id
                      WHERE ass.search_string
                       LIKE ?
-                  GROUP BY a.full_artist_name
+                  --GROUP BY a.full_artist_name
                     """, ('%'+query+'%',))
             row = cursor.fetchall()
-            for i in range(len(row)):
+            n_rows = len(row)
+            if n_rows == 0:
+                new_query_list.remove(query)
+                continue
+            for i in range(n_rows):
                 artist_id        = row[i][0]
                 artist_full_name = row[i][2]
                 result.append([artist_full_name, 10, artist_id])
                 #print("{}:10".format(artist_full_name, " : 10"))
             time2 = time.time()
-            print('Any (*) Matches took {:0.3f} ms'.format((time2-time1)*1000.0))
+            #print('Any (*) Matches took {:0.3f} ms'.format((time2-time1)*1000.0))
+
+            time1 = time.time()
+            # -(2)- Look for an close match (20 pts)...
+            cursor = conn.execute("""\
+                    SELECT id, dial_compatible_artist_name, full_artist_name
+                      FROM artists
+                     WHERE dial_compatible_artist_name LIKE ?
+                  --GROUP BY full_artist_name
+                     """, (query+'%',))
+            row = cursor.fetchall()
+            n_rows = len(row)
+            for i in range(n_rows):
+                artist_id        = row[i][0]
+                artist_full_name = row[i][2]
+                result.append([artist_full_name, 20, artist_id])
+                #print("{}:20".format(artist_full_name, " : 20"))
+            time2 = time.time()
+            #print('Close (^) Matches took {:0.3f} ms'.format((time2-time1)*1000.0))
+
+            # -(3)- Look for an exact match (100 pts)...
+            time1 = time.time()
+            cursor = conn.execute("""\
+                    SELECT id, dial_compatible_artist_name, full_artist_name
+                      FROM artists
+                     WHERE dial_compatible_artist_name = ?
+                  --GROUP BY full_artist_name
+                     """, (query,))
+            row = cursor.fetchall()
+            n_rows = len(row)
+            for i in range(n_rows):
+                artist_id        = row[i][0]
+                artist_full_name = row[i][2]
+                result.append([artist_full_name, 100, artist_id])
+                #print("{}:100".format(artist_full_name, " : 100"))
+            time2 = time.time()
+            #print('Exact Matches took {:0.3f} ms'.format((time2-time1)*1000.0))
+
 
 
         if len(result) > 0:
@@ -146,9 +164,10 @@ class Search():
             # Sort list by second column (score)...
             time2 = time.time()
             print('Sorting took {:0.3f} ms'.format((time2-time1)*1000.0))
-            return sorted_grouped_results
+            return sorted_grouped_results, new_query_list
         else:
-            return None
+            print("___{}".format(",".join(new_query_list)))
+            return None, new_query_list
 
     def get_album_colors(self, album_id):
         try:

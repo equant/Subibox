@@ -248,7 +248,7 @@ class LibraryScreen(ProtoScreen):
     """
     search_list      = ListProperty()
     search_string    = StringProperty()
-    last_result_df   = None  # This is a Pandas dataframe( 'name', 'id', 'score' )
+    last_result_df   = None  # This is not a Pandas dataframe( 'name', 'id', 'score' ) anymore.
     last_artist_name = StringProperty()  # This is a Pandas dataframe( 'name', 'id', 'score' )
 
     def __init__(self, *args, **kwargs):
@@ -261,7 +261,7 @@ class LibraryScreen(ProtoScreen):
         self.last_result_df   = None
         self.last_artist_name = ""
 
-    #@timing
+    @timing
     def handle_input(self, input_string):
 
         do_search = False
@@ -285,7 +285,7 @@ class LibraryScreen(ProtoScreen):
                 do_search = True
 
         if do_search:
-            result = musicSearch.artist_search(self.search_list)
+            result, self.search_list = musicSearch.artist_search(self.search_list)
             if result is None:
                 self.search_list = []
                 self.last_result_df = None
@@ -295,6 +295,7 @@ class LibraryScreen(ProtoScreen):
 
 
     # -- bound to self.last_artist_name
+    #@timing
     def set_search_label(self, instance, value):
         self.ids.search_string_label.text = value
         
