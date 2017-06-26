@@ -5,7 +5,6 @@ import sqlite3
 #import pandas as pd
 from collections import Counter
 
-#database_file = 'dbTools/subibox.sqlite.full'
 database_file    = 'dbTools/subibox.sqlite'
 conn             = sqlite3.connect(database_file)
 conn.row_factory = sqlite3.Row
@@ -18,29 +17,6 @@ def timing(f):
         print('{} function took {:0.3f} ms'.format(f.__name__, (time2-time1)*1000.0))
         return ret
     return wrap
-
-class StringAnalyzer:
-    """
-    Analyze string and remove stop words
-    """
-    #stop_words = ['los','las','el','the','of','and','le','de','a','des','une','un','s','is','www','http','com','org','-']
-    stop_words = ['www','http','com','org','-']
-    def __init__(self):
-        pass
-
-    def analyze(self, text):
-        words = []
-        #text = self.strip_accents(text)
-        text = re.compile('[\'`?"]').sub(" ", text)
-        text = re.compile('[^A-Za-z0-9]').sub(" ", text)
-        for word in text.split(" "):
-            word = word.strip().lower()
-            #if word not in self.stop_words:
-            if word not in self.stop_words:
-                #print("|{}|".format(word))
-                words.append(word.lower())
-        return words
-
 
 class Search():
 
@@ -61,12 +37,11 @@ class Search():
         return cursor.fetchall()
 
 
-    @timing
+    #@timing
     def artist_search(self,query_list):
         print("Searching artists, query_list has {} items in it".format(len(query_list)))
         result = []
         new_query_list = query_list
-        print("___{}".format(",".join(query_list)))
 
         for query in query_list:
             """
@@ -98,7 +73,6 @@ class Search():
                 artist_id        = row[i][0]
                 artist_full_name = row[i][2]
                 result.append([artist_full_name, 10, artist_id])
-                #print("{}:10".format(artist_full_name, " : 10"))
             time2 = time.time()
             #print('Any (*) Matches took {:0.3f} ms'.format((time2-time1)*1000.0))
 
@@ -116,7 +90,6 @@ class Search():
                 artist_id        = row[i][0]
                 artist_full_name = row[i][2]
                 result.append([artist_full_name, 20, artist_id])
-                #print("{}:20".format(artist_full_name, " : 20"))
             time2 = time.time()
             #print('Close (^) Matches took {:0.3f} ms'.format((time2-time1)*1000.0))
 
@@ -134,7 +107,6 @@ class Search():
                 artist_id        = row[i][0]
                 artist_full_name = row[i][2]
                 result.append([artist_full_name, 100, artist_id])
-                #print("{}:100".format(artist_full_name, " : 100"))
             time2 = time.time()
             #print('Exact Matches took {:0.3f} ms'.format((time2-time1)*1000.0))
 
@@ -152,7 +124,6 @@ class Search():
             for artist_name, score, artist_id in result:
                 id_map[artist_name] = artist_id
                 c.update({artist_name: score})
-            #print(list(c.items()))
             sorted_grouped_results = []
             for artist_name, score in sorted(c.items(), key=lambda x: x[1], reverse=True):
                 d = {
@@ -163,10 +134,9 @@ class Search():
                 sorted_grouped_results.append(d)
             # Sort list by second column (score)...
             time2 = time.time()
-            print('Sorting took {:0.3f} ms'.format((time2-time1)*1000.0))
+            #print('Sorting took {:0.3f} ms'.format((time2-time1)*1000.0))
             return sorted_grouped_results, new_query_list
         else:
-            print("___{}".format(",".join(new_query_list)))
             return None, new_query_list
 
     def get_album_colors(self, album_id):
@@ -180,7 +150,6 @@ class Search():
                  WHERE album_id = ?
               ORDER BY color_sum
                  """, (album_id,))
-        #df = pd.DataFrame(cursor.fetchall(), columns=['color', 'color_sum'])
         return cursor.fetchall()
 
 

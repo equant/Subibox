@@ -24,7 +24,6 @@ class Play():
         self.client = MPDClient()               # create client object
         #client.timeout = 10                # network timeout in seconds (floats allowed), default: None
         #client.idletimeout = None          # timeout for fetching the result of the idle command is handled seperately, default: None
-        #self.connect()
 
     def connect(self):
         try:
@@ -38,17 +37,14 @@ class Play():
 
     def current_track_info(self):
         self.connect()
-        print("[DEBUG][SubiPlay.Play.current_track()")
         return self.client.currentsong()
 
     def next_track(self):
         self.connect()
-        print("[DEBUG][SubiPlay.Play.next_track()")
         self.client.next()
 
     def pause(self):
         self.connect()
-        print("[DEBUG][SubiPlay.Play.pause()")
         self.client.pause()
 
     def play_album(self, album_path):
