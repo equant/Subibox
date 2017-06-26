@@ -5,11 +5,12 @@ from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.label import Label
+from kivy.uix.image import Image
 from kivy.core.window import Window
 from kivy.clock import Clock
 import numpy as np
 
-from kivy.properties import StringProperty, ListProperty
+from kivy.properties import StringProperty, ListProperty, DictProperty, ObjectProperty
 
 from kivy.core.text import LabelBase
 LabelBase.register(name       = "Avenir",
@@ -22,11 +23,6 @@ emulate_rotary_dial = True
 import SubiSearch
 import SubiPlay
 from RotaryDial import RotaryDial
-
-musicSearch = SubiSearch.Search()
-musicPlay   = SubiPlay.Play()
-analyzer    = SubiSearch.StringAnalyzer()
-dial        = RotaryDial()
 
 def timing(f):
     def wrap(*args):
@@ -49,9 +45,6 @@ def rgb_to_color_list(rgb_string, alpha=1.):
     return [int(c[i:i+2],16)/255 for i in range(0, len(c), 2)] + [alpha]
 
 
-# Create both screens. Please note the root.manager.current: this is how
-# you can control the ScreenManager from kv. Each screen has by default a
-# property manager that gives you the instance of the ScreenManager used.
 Builder.load_string("""
 <SubiLabel>:
     text: "Foo"
@@ -64,24 +57,6 @@ Builder.load_string("""
 #            pos: self.pos  # incorrect
 #            size: self.size
 
-<AlbumArt>:
-    source: 'assets/images/default_cover.jpg'
-    orientation: "vertical"
-    Image:
-        id: album_image
-        source: self.source
-        SubiLabel:
-            id: dial_label
-            font_size: self.parent.height/3
-            pos_hint: {'x': 0.5, 'y': 0}
-            #size_hint_y: None
-            #size_hint_x: None
-            #width: self.parent.width
-            #height: self.parent.height
-            outline_color: [0,1,0,1]
-            outline_width: 3
-
-        
 <AlbumScreen>:
     id: album_screen
     spacing: 10
@@ -90,35 +65,6 @@ Builder.load_string("""
         id: album_layout
         rows: 3
 
-        AlbumArt:
-            id: 1
-            text: "1"
-        AlbumArt:
-            id: 2
-            text: "2"
-        AlbumArt:
-            id: 3
-            text: "3"
-
-        AlbumArt:
-            id: 4
-            text: "4"
-        AlbumArt:
-            id: 5
-            text: "5"
-        AlbumArt:
-            id: 6
-            text: "6"
-
-        AlbumArt:
-            id: 7
-            text: "7"
-        AlbumArt:
-            id: 8
-            text: "8"
-        AlbumArt:
-            id: 9
-            text: "9"
 
 <PlayingScreen>:
     id: playing_screen
@@ -155,12 +101,6 @@ Builder.load_string("""
             font_name: "Avenir"
         Label:
             text: ''
-#        Button:
-#            text: 'Goto settings'
-#            on_release: root.manager.current = 'settings'
-#        Button:
-#            text: 'View Album Screen'
-#            on_release: root.manager.current = 'albums'
 
 <SettingsScreen>:
     BoxLayout:
@@ -171,12 +111,6 @@ Builder.load_string("""
             on_release: root.manager.current = 'menu'
 """)
 
-class AlbumArt(RelativeLayout):
-#class AlbumArt(BoxLayout):
-    def build(self):
-        return self
-
-
 class SubiLabel(Label):
     default_background_color = [1,1,1,0.5]
     default_color = [1,1,1,1]
@@ -185,44 +119,34 @@ class SubiLabel(Label):
     def build(self):
         return self
 
+class Album(RelativeLayout):
+    album = DictProperty()
+    
+    def __init__(self, *args, **kwargs):
+        super(Album, self).__init__(*args, **kwargs)
+        self.bind(album=self.album_changed)
+
+    def build(self):
+        return self
+
+    def album_changed(self, instance, value):
+        if len(self.album['album_art']) > 0:
+            # There is an album cover image
+            ac = self.album['album_art'].replace('/mnt/jukebox/','/home/equant/')
+            print("Found album cover: {}".format(ac))
+            album_cover = Image(source=ac, id='album_cover')
+        else:
+            print("Found no album cover")
+            album_cover = Label(text=self.album['full_album_name'], id='album_cover')
+            # There is not album cover image
+        self.add_widget(album_cover)
+        return
+
 
 class ProtoScreen(Screen):
-
     def handle_input(self, input_string):
         pass
 
-class PlayingScreen(ProtoScreen):
-
-    artist = StringProperty()
-    album  = StringProperty()
-    title   = StringProperty()
-
-    #def __init__(self, *args, **kwargs):
-        #super(PlayingScreen, self).__init__(*args, **kwargs)
-
-    def on_pre_enter(self):
-        self.current_track_event = Clock.schedule_interval(self.update_track_info, 2.)
-    def on_pre_leave(self):
-        pass
-        self.current_track_event.cancel()
-
-
-    def handle_input(self, input_string):
-        print("PlayScreen.handle_input() got {}".format(input_string))
-        if input_string == "1":
-            musicPlay.pause()
-        if input_string == "2":
-            self.manager.current = 'albums'
-        if input_string == "9":
-            musicPlay.nextTrack()
-        if input_string == "0":
-            self.manager.current = 'library'
-
-    def update_track_info(self, event):
-        self.current_track_info = musicPlay.current_track_info()
-        self.artist = self.current_track_info['artist']
-        self.album = self.current_track_info['album']
-        self.title = self.current_track_info['title']
 
 class LibraryScreen(ProtoScreen):
     """
@@ -273,8 +197,8 @@ class LibraryScreen(ProtoScreen):
 
         if emulate_rotary_dial:
             if input_string in "23456789":
-                #print("DEBUG: rotary input: {}".format(input_string))
-                self.search_list = dial.rotaryNumberToList(input_string, self.search_list)
+                print("DEBUG: rotary input: {}".format(app))
+                self.search_list = app.dial.rotaryNumberToList(input_string, self.search_list)
                 do_search = True
             if input_string == "1":
                 self.switch_to_album_screen()
@@ -285,7 +209,7 @@ class LibraryScreen(ProtoScreen):
                 do_search = True
 
         if do_search:
-            result, self.search_list = musicSearch.artist_search(self.search_list)
+            result, self.search_list = app.musicSearch.artist_search(self.search_list)
             if result is None:
                 self.search_list = []
                 self.last_result_df = None
@@ -302,7 +226,7 @@ class LibraryScreen(ProtoScreen):
     # -- Due to pressing "enter" in self.handle_input()
     def switch_to_album_screen(self):
         artist_id = self.last_result[0]['id']
-        self.manager.get_screen('albums').albums = musicSearch.get_artist_albums(int(artist_id))
+        self.manager.get_screen('albums').albums = app.musicSearch.get_artist_albums(int(artist_id))
         self.manager.current = 'albums'
 
 class SettingsScreen(ProtoScreen):
@@ -315,13 +239,15 @@ class AlbumScreen(ProtoScreen):
     Album Dataframe: id, full_album_name, album_year, album_path, album_art
     """
 
-    albums      = None
+    albums      = ObjectProperty()
     album_pages = None
     page = 0
+    album_widgets = []
 
 
     def __init__(self, *args, **kwargs):
         super(AlbumScreen, self).__init__(*args, **kwargs)
+        self.bind(albums=self.update_albums)
 
     def handle_input(self, input_string):
         if input_string is None:
@@ -334,7 +260,7 @@ class AlbumScreen(ProtoScreen):
                 album_path = album['album_path']
                 #print("[DEBUG] AlbumScreen.handle_input(): play: {}".format(album_name))
                 #print("[DEBUG] AlbumScreen.handle_input(): play: {}".format(album_path))
-                musicPlay.play_album(album_path)
+                app.musicPlay.play_album(album_path)
                 self.manager.current = 'playing'
         if input_string == "9": 
             #print("Next Page")
@@ -347,53 +273,69 @@ class AlbumScreen(ProtoScreen):
             self.manager.current = 'library'
 
 
-    def on_pre_enter(self):
+    #def on_pre_enter(self):
+        #self.make_album_pages()
+        #self.do_album_grid()
+
+#    def do_album_grid(self):
+#        if self.album_pages is None:
+#            self.make_album_pages()
+#        grid_layout_widget = self.ids.album_layout
+#        for album_widget, i in zip(reversed(grid_layout_widget.children), range(len(grid_layout_widget.children))):
+#            #print("Widget: {}, albums on this page: {}".format(i, len(self.album_pages[self.page])))
+#            if len(self.album_pages[self.page]) > i:
+#                image_path = self.album_pages[self.page][i]['album_art']
+#                if len(image_path) > 3:
+#                    album_widget.ids['album_image'].source = image_path
+#                    album_widget.ids['dial_label'].text    = str(i+1)
+#                    colors = root.musicSearch.get_album_colors(self.album_pages[self.page][i]['id'])
+#                    if len(colors) == 3:
+#                        album_widget.ids['dial_label'].background_color = rgb_to_color_list(colors[1]['color'], 0.5)
+#                        #album_widget.ids['dial_label'].color = [1,1,1,1]
+#                        c = 1 - np.array(rgb_to_color_list(colors[1]['color'], 0.2))
+#                        #album_widget.ids['dial_label'].color = rgb_to_color_list(colors.color[2], 0.9)
+#                        album_widget.ids['dial_label'].color =  c
+#                        album_widget.ids['dial_label'].outline_color =  rgb_to_color_list(colors[1]['color'], 0.9)
+#                    album_widget.ids['album_image'].color  = [1,1,1,1]
+#                else:
+#                    self.clear_album_widget(album_widget)
+#                    album_widget.ids['dial_label'].text    = str(i+1)
+#                    album_widget.ids['dial_label'].color = [1,1,1,1]
+#                    album_widget.ids['dial_label'].outline_color =  [.9,.9,.9, 1]
+#            else:
+#                self.clear_album_widget(album_widget)
+#                #album_widget.ids['album_image'].source = ""
+#                #album_widget.ids['album_image'].color = [0,0,0,1]
+#                #album_widget.ids['dial_label'].text = ""
+#        # Last button is next button:
+#        if len(self.album_pages) > self.page:
+#            album_widget.ids['dial_label'].text = "Next"
+#            album_widget.ids['dial_label'].color = [1,1,1,1]
+#            album_widget.ids['dial_label'].outline_color =  [.9,.9,.9, 1]
+#
+#    def clear_album_widget(self, a):
+#        a.ids['album_image'].source = ""
+#        a.ids['album_image'].color = [0,0,0,1]
+#        a.ids['dial_label'].text = ""
+#        a.ids['dial_label'].background_color = a.ids['dial_label'].default_background_color
+#        a.ids['dial_label'].color = a.ids['dial_label'].default_color
+
+    def clear_album_widgets(self):
+        for w in self.album_widgets:
+            self.ids.album_layout.remove(w)
+        self.album_widgets = []
+
+    def update_albums(self, instance, value):
         self.make_album_pages()
-        self.do_album_grid()
-
-
-    def do_album_grid(self):
-        if self.album_pages is None:
-            self.make_album_pages()
-        grid_layout_widget = self.ids.album_layout
-        for album_widget, i in zip(reversed(grid_layout_widget.children), range(len(grid_layout_widget.children))):
-            #print("Widget: {}, albums on this page: {}".format(i, len(self.album_pages[self.page])))
-            if len(self.album_pages[self.page]) > i:
-                image_path = self.album_pages[self.page][i]['album_art']
-                if len(image_path) > 3:
-                    album_widget.ids['album_image'].source = image_path
-                    album_widget.ids['dial_label'].text    = str(i+1)
-                    colors = musicSearch.get_album_colors(self.album_pages[self.page][i]['id'])
-                    if len(colors) == 3:
-                        album_widget.ids['dial_label'].background_color = rgb_to_color_list(colors[1]['color'], 0.5)
-                        #album_widget.ids['dial_label'].color = [1,1,1,1]
-                        c = 1 - np.array(rgb_to_color_list(colors[1]['color'], 0.2))
-                        #album_widget.ids['dial_label'].color = rgb_to_color_list(colors.color[2], 0.9)
-                        album_widget.ids['dial_label'].color =  c
-                        album_widget.ids['dial_label'].outline_color =  rgb_to_color_list(colors[1]['color'], 0.9)
-                    album_widget.ids['album_image'].color  = [1,1,1,1]
-                else:
-                    self.clear_album_widget(album_widget)
-                    album_widget.ids['dial_label'].text    = str(i+1)
-                    album_widget.ids['dial_label'].color = [1,1,1,1]
-                    album_widget.ids['dial_label'].outline_color =  [.9,.9,.9, 1]
-            else:
-                self.clear_album_widget(album_widget)
-                #album_widget.ids['album_image'].source = ""
-                #album_widget.ids['album_image'].color = [0,0,0,1]
-                #album_widget.ids['dial_label'].text = ""
-        # Last button is next button:
-        if len(self.album_pages) > self.page:
-            album_widget.ids['dial_label'].text = "Next"
-            album_widget.ids['dial_label'].color = [1,1,1,1]
-            album_widget.ids['dial_label'].outline_color =  [.9,.9,.9, 1]
-
-    def clear_album_widget(self, a):
-        a.ids['album_image'].source = ""
-        a.ids['album_image'].color = [0,0,0,1]
-        a.ids['dial_label'].text = ""
-        a.ids['dial_label'].background_color = a.ids['dial_label'].default_background_color
-        a.ids['dial_label'].color = a.ids['dial_label'].default_color
+        #self.album_widgets = ListProperty([None]*len(self.album_pages[self.page]))
+        #print("FOO: {}".format(self.ids['1']))
+        #self.ids['1'].album = self.album_pages[self.page][0]
+        #self.ids['2'].album = self.album_pages[self.page][1]
+        for idx, album in enumerate(self.album_pages[self.page]):
+            a = Album()
+            a.album = album
+            self.album_widgets.append(a)
+            self.ids.album_layout.add_widget(a)
 
     def make_album_pages(self, n=8):
         """
@@ -420,6 +362,38 @@ class AlbumScreen(ProtoScreen):
         return
 
 
+class PlayingScreen(ProtoScreen):
+
+    artist = StringProperty()
+    album  = StringProperty()
+    title   = StringProperty()
+
+    #def __init__(self, *args, **kwargs):
+        #super(PlayingScreen, self).__init__(*args, **kwargs)
+
+    def on_pre_enter(self):
+        self.current_track_event = Clock.schedule_interval(self.update_track_info, 2.)
+    def on_pre_leave(self):
+        pass
+        self.current_track_event.cancel()
+
+
+    def handle_input(self, input_string):
+        print("PlayScreen.handle_input() got {}".format(input_string))
+        if input_string == "1":
+            root.musicPlay.pause()
+        if input_string == "2":
+            self.manager.current = 'albums'
+        if input_string == "9":
+            root.musicPlay.nextTrack()
+        if input_string == "0":
+            self.manager.current = 'library'
+
+    def update_track_info(self, event):
+        self.current_track_info = root.musicPlay.current_track_info()
+        self.artist = self.current_track_info['artist']
+        self.album = self.current_track_info['album']
+        self.title = self.current_track_info['title']
 
 
 class MyManager(ScreenManager):
@@ -441,6 +415,12 @@ class SubiboxApp(App):
 
 
     def build(self):
+        global app
+        app = self
+        self.musicSearch = SubiSearch.Search()
+        self.musicPlay   = SubiPlay.Play()
+        self.dial        = RotaryDial()
+
         # Create the screen manager
         self.sm = ScreenManager()
         self.sm.transition = FadeTransition()
