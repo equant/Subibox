@@ -1,3 +1,5 @@
+<img align='right' src='https://github.com/equant/jukebox/raw/master/assets/readme/Television-Telephone-vintage-header.jpg'>
+
 # Subibox Jukebox: 
 
 An [mpd](https://github.com/MusicPlayerDaemon/MPD) (digital jukebox) client using a TV and rotary dial telephone.
@@ -23,4 +25,3 @@ $ pip install --user pillow
 Here is a video of the old version...
 *  https://youtu.be/yD5oH2uD-sM
 
-![Phone/TV](https://github.com/equant/jukebox/raw/master/assets/readme/Television-Telephone-vintage-header.jpg)
