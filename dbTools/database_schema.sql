@@ -21,3 +21,8 @@ CREATE TABLE artist_search_strings(
     artist_id,
     PRIMARY KEY(search_string, artist_id)
 );
+CREATE TABLE artist_tags(
+    tag,
+    artist_id,
+    PRIMARY KEY(tag, artist_id)
+);

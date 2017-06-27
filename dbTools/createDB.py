@@ -13,6 +13,8 @@ database_file = 'subibox.sqlite'
 music_path = '/home/equant/beets'
 #music_path = '/mnt/toshiba/beets/'
 
+DO_LAST_FM = True
+
 art_path_hack = [
         '/mnt/toshiba/',
         '/mnt/jukebox/',
@@ -45,7 +47,25 @@ class StringAnalyzer:
         return ''.join((c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn'))
 
 
+if DO_LAST_FM:
+    try:
+        from lastfm import SubiLastFm
+        LastFM = SubiLastFm()
+    except ModuleNotFoundError:
+        print("You need to install pylast or set DO_LAST_FM = False.")
+        sys.exit(0)
 
+def get_lastfm_tags(artist_name):
+
+    if DO_LAST_FM:
+        foo = LastFM.last.get_artist(artist_name).get_top_tags()
+        tags = []
+        for thing in foo:
+            if int(thing.weight) > 80:
+                print("{} : {}".format(thing.item.name, thing.weight))
+                tags.append(thing.item.name)
+        return tags
+    return None
 
 # -- Create database file by traversing music directory
 
@@ -59,6 +79,7 @@ class Index:
         conn     = sqlite3.connect(database_file)
         analyzer = StringAnalyzer()
 
+        ####################################
         # -- Loop through artist directories
 
         for artist_dir in os.listdir(root_path):
@@ -114,7 +135,24 @@ class Index:
                     # Arstis already existed.
                     artist_id = row[0]
 
-                ################################
+                ################
+                # -- LastFM Tags
+
+                tags = get_lastfm_tags(full_artist_name)
+                if tags is not None:
+                    for tag in tags:
+                        try:
+                            cursor.execute("""\
+                                INSERT INTO artist_tags
+                                            (artist_id, tag)
+                                     VALUES (?,?);""", (artist_id, tag))
+                        except:
+                            # ignoring errors from sqlite3 for duplicate entries.
+                            pass
+                        conn.commit()
+                sys.exit(0)
+
+                ###############################
                 # -- Add Albums to the database
 
                 for album_dir in os.listdir(artist_root_path):
