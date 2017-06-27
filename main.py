@@ -74,17 +74,13 @@ Builder.load_string("""
         Label:
             id: artist
             text: self.parent.parent.artist
-            font_size: 48
-            font_name: "Avenir"
-        Label:
-            id: album
-            text: self.parent.parent.album
-            font_size: 48
+            font_size: 100
             font_name: "Avenir"
         Label:
             id: title
-            text: self.parent.parent.title
-            font_size: 48
+            size_hint: (1,0.2)
+            text: self.parent.parent.album + " - " + self.parent.parent.title
+            font_size: 55
             font_name: "Avenir"
 
 <LibraryScreen>:
@@ -345,6 +341,9 @@ class PlayingScreen(ProtoScreen):
         #super(PlayingScreen, self).__init__(*args, **kwargs)
 
     def on_pre_enter(self):
+        self.artist = ""
+        self.album  = ""
+        self.title  = ""
         self.current_track_event = Clock.schedule_interval(self.update_track_info, 2.)
     def on_pre_leave(self):
         pass
