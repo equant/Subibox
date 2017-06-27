@@ -84,9 +84,7 @@ class Index:
                          LIMIT 1""", (dial_compatible_artist_name,))
                 row = cursor.fetchone()
 
-                if row is not None:
-                    artist_id = row[0]
-                else:
+                if row is None:
                     # We need to save this artist to the artists table.
                     print("    ...Adding artist to database...")
                     cursor = conn.execute("""\
@@ -99,21 +97,22 @@ class Index:
                     artist_id = cursor.lastrowid
                     print("New artist saved as id: {}".format(artist_id))
 
+                    # -- save all of the search_strings which have
+                    # -- been assembled from the artists name
 
-                # -- save all of the search_strings which have
-                # -- been assembled from the artists name
-
-
-                for w in words:
-                    try:
-                        cursor.execute("""\
-                            INSERT INTO artist_search_strings
-                                        (search_string, artist_id)
-                                 VALUES (?,?);""", (w, artist_id))
-                    except:
-                        # ignoring errors from sqlite3 for duplicate entries.
-                        pass
-                conn.commit()
+                    for w in words:
+                        try:
+                            cursor.execute("""\
+                                INSERT INTO artist_search_strings
+                                            (search_string, artist_id)
+                                     VALUES (?,?);""", (w, artist_id))
+                        except:
+                            # ignoring errors from sqlite3 for duplicate entries.
+                            pass
+                    conn.commit()
+                else:
+                    # Arstis already existed.
+                    artist_id = row[0]
 
                 ################################
                 # -- Add Albums to the database
@@ -226,80 +225,7 @@ class Index:
             conn.commit()
 
 
-#            for name in files:
-#                #if name[-4:].lower() == '.mp3':
-#                #if name[-5:].lower() == '.flac':
-#                if 1:
-#                    #print "NAME: ", name
-#
-#                    path = os.path.join(root,name)
-#                    alphaNumPattern = re.compile('[\W_]+')
-#
-#                    # Extract Tags From File
-#                    try:
-#                        id3 = ID3(path)
-#                    except:
-#                        errors.append(path)
-#                        id3 = None
-#
-#
-#                    # Insert each file into the id3 table
-#                    if id3 != None:
-#                        #cursor.execute("INSERT INTO id3(location, artist, title, album, genre, comment, duration, length, size) VALUES(?,?,?,?,?,?,?,?,?)", (path,id3.artist,id3.title,id3.album,id3.genre,id3.comment,id3.duration,id3.length,id3.size))
-#                        last_id3_id = cursor.lastrowid
-#                        #for field in ['artist', 'title', 'album', 'comment', 'genre']:
-#
-#
-#                        # Create the artist tables
-#                        for field in ['artist']:
-#                            #print "Field: ", getattr(id3, field)
-#                            full_artist_name = getattr(id3, field)
-#                            dial_compatible_artist_name = full_artist_name
-#                            dial_compatible_artist_name = alphaNumPattern.sub('', dial_compatible_artist_name)
-#                            dial_compatible_artist_name = dial_compatible_artist_name.lower()
-#
-#                            # Break up artist name into search_strings and put in artist_search_strings table
-#
-#                            words = analyzer.analyze(getattr(id3, field))
-#                            words.append(dial_compatible_artist_name)
-#                            for word in words:
-#                                #cursor.execute("INSERT INTO id3index(id3_id,search_string,field) VALUES (?,?,?);", (full_artist_name, word, field))
-#                                try:
-#                                    cursor.execute("INSERT INTO artist_search_strings(search_string,full_artist_name) VALUES (?,?);", (word, full_artist_name))
-#                                except:
-#                                    pass
-#
-#                            # Put artist in artists table
-#
-#                            try:
-#                                cursor.execute("INSERT INTO artists(dial_compatible_artist_name,full_artist_name) VALUES (?,?);", (dial_compatible_artist_name, full_artist_name))
-#                            except:
-#                                pass
-#
-#                            cnx.commit()
-#                # Display info about the whole process...
-#
-#                #cursor.execute('SELECT COUNT(*) AS nbrows FROM id3index LIMIT 1;')
-#        #for line in cursor:
-#            #print 'index size: ' + str(line["nbrows"])
-#        #cnx.commit()
-#        #if len(errors) > 0:
-#            #print ""
-#            #print "---- Errors ----"
-#            #print ""
-#            #for error in errors:
-#                #print error
-
-
-
-
 if __name__ == '__main__':
-    #if len(sys.argv) < 2:
-        #print 'Usage: tags.py [your music dir]'
-    #else:
-        #index = Index()
-        #index.build(sys.argv[1])
-
     index = Index()
     index.build(music_path)
 
