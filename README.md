@@ -25,3 +25,7 @@ $ pip install --user pillow
 Here is a video of the old version...
 *  https://youtu.be/yD5oH2uD-sM
 
+
+# To Do
+
+*  "glError 0x505"
