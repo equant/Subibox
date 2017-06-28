@@ -11,7 +11,7 @@ from kivy.uix.widget import Widget
 from kivy.clock import Clock
 import numpy as np
 
-from kivy.properties import StringProperty, ListProperty, DictProperty, ObjectProperty, NumericProperty
+from kivy.properties import StringProperty, ListProperty, DictProperty, ObjectProperty, NumericProperty, BooleanProperty
 
 from kivy.core.text import LabelBase
 LabelBase.register(name       = "Avenir",
@@ -26,6 +26,15 @@ import SubiPlay
 from RotaryDial import RotaryDial
 
 def timing(f):
+    """
+    Used to benchmark code to discover bottlenecks.  Important since the target
+    platform is Pi Zero
+    Usage:
+
+    @timing
+    def function_you_want_to_time(self, foo bar):
+        blah blah blah
+    """
     def wrap(*args):
         time1 = time.time()
         ret = f(*args)
@@ -98,13 +107,51 @@ Builder.load_string("""
         Label:
             text: ''
 
-<SettingsScreen>:
+<SearchSettingsScreen>:
     BoxLayout:
-        Button:
-            text: 'Useless button'
-        Button:
-            text: 'Back to main screen'
-            on_release: root.manager.current = 'menu'
+        orientation: 'vertical'
+        GridLayout:
+            id: layout
+            cols: 2
+            DialLabel:
+                size_hint_y : None
+                text: '1'
+            Label:
+                size_hint_y : None
+                canvas:
+                id: back
+                text: "Back to Search"
+                font_size: 50
+                font_name: "Avenir"
+
+            DialLabel:
+                size_hint_y : None
+                text: '2'
+            Label:
+                size_hint_y : None
+                id: search_artists
+                text: "Search Artists"
+                font_size: 50
+                font_name: "Avenir"
+                size_hint_y: None
+
+            DialLabel:
+                size_hint_y : None
+                text: '3'
+            Label:
+                size_hint_y : None
+                id: search_tags
+                text: "Search Genre Tags"
+                font_size: 50
+                font_name: "Avenir"
+                valign: 'bottom'
+
+#                canvas:
+#                    Color:
+#                        rgba: .2,.2,.2,1
+#                    Rectangle:
+#                        pos: self.pos
+#                        size: self.size
 
 <NextButton>
     Label:
@@ -112,11 +159,6 @@ Builder.load_string("""
     DialLabel:
         text: '9'
         canvas:
-            #Color:
-                #rgba: [1,0,0,1]
-            #Rectangle:
-                #size: self.size
-                ##pos:  self.pos
 """)
 
 class NextButton(RelativeLayout):
@@ -197,7 +239,6 @@ class LibraryScreen(ProtoScreen):
         self.last_result_df   = None
         self.last_artist_name = ""
 
-    #@timing
     def handle_input(self, input_string):
 
         do_search = False
@@ -211,16 +252,24 @@ class LibraryScreen(ProtoScreen):
             if input_string in "23456789":
                 self.search_list = app.dial.rotaryNumberToList(input_string, self.search_list)
                 do_search = True
-            if input_string == "1":
+            elif input_string == "1":
                 self.switch_to_album_screen()
                 return
+            elif input_string == "0":
+                self.manager.current = 'search_settings'
         else:
             if input_string.isalpha():
                 self.search_list[0] += input_string
                 do_search = True
 
         if do_search:
-            result, self.search_list = app.musicSearch.artist_search(self.search_list)
+            if self.manager.get_screen('search_settings').search_artists:
+                result, self.search_list = app.musicSearch.artist_search(self.search_list)
+            elif self.manager.get_screen('search_settings').search_tags:
+                #result, self.search_list = app.musicSearch.tag_search(self.search_list)
+                result, self.search_list = app.musicSearch.artist_search(self.search_list)
+            else:
+                print("[WARNING] Somehow we don't have a search type (artist or tag) set.")
             if result is None:
                 self.search_list = []
                 self.last_result_df = None
@@ -230,7 +279,6 @@ class LibraryScreen(ProtoScreen):
 
 
     # -- bound to self.last_artist_name
-    #@timing
     def set_search_label(self, instance, value):
         self.ids.search_string_label.text = value
         
@@ -240,10 +288,43 @@ class LibraryScreen(ProtoScreen):
         self.manager.get_screen('albums').albums = app.musicSearch.get_artist_albums(int(artist_id))
         self.manager.current = 'albums'
 
-class SettingsScreen(ProtoScreen):
-    pass
+class SearchSettingsScreen(ProtoScreen):
+
+    search_artists = BooleanProperty(True)
+    search_tags    = BooleanProperty(False)
+
+    active_color   = [1.0, 1.0, 1.0, 1]
+    inactive_color = [0.5, 0.5, 0.5, 1]
+
+    def handle_input(self, input_string):
+        if input_string == "1":
+            self.manager.current = 'library'
+        elif input_string == "2":
+            self.search_artists = True
+            #self.search_artists = not self.search_artists
+        elif input_string == "3":
+            self.search_tags = True
+            #self.search_tags = not self.search_tags
 
 
+    def __init__(self, *args, **kwargs):
+        super(SearchSettingsScreen, self).__init__(*args, **kwargs)
+        self.bind(search_artists=self.update_search_artists_label)
+        self.bind(search_tags=self.update_search_tags_label)
+
+    def update_search_artists_label(self, instance, value):
+        if self.search_artists:
+            self.ids.search_artists.color = self.active_color
+            self.search_tags = False
+        else:
+            self.ids.search_artists.color = self.inactive_color
+
+    def update_search_tags_label(self, instance, value):
+        if self.search_tags:
+            self.ids.search_tags.color = self.active_color
+            self.search_artists = False
+        else:
+            self.ids.search_tags.color = self.inactive_color
 
 class AlbumScreen(ProtoScreen):
     """
@@ -396,7 +477,7 @@ class SubiboxApp(App):
         self.sm = ScreenManager()
         self.sm.transition = FadeTransition()
         self.sm.add_widget(LibraryScreen(name='library'))
-        self.sm.add_widget(SettingsScreen(name='settings'))
+        self.sm.add_widget(SearchSettingsScreen(name='search_settings'))
         self.sm.add_widget(AlbumScreen(name='albums'))
         self.sm.add_widget(PlayingScreen(name='playing'))
         Window.bind(on_key_down=self._on_keyboard_down)

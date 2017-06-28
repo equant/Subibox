@@ -13,6 +13,14 @@ database_file = 'subibox.sqlite'
 music_path = '/home/equant/beets'
 #music_path = '/mnt/toshiba/beets/'
 
+DO_LAST_FM = True
+DO_COLORZ  = False
+lastfm_tag_weight_threshold = 75   # Only use tags with a weght of 75-100
+
+lastfm_tag_kill_list = [
+        'seen live',
+]
+
 art_path_hack = [
         '/mnt/toshiba/',
         '/mnt/jukebox/',
@@ -45,7 +53,28 @@ class StringAnalyzer:
         return ''.join((c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn'))
 
 
+if DO_LAST_FM:
+    try:
+        from lastfm import SubiLastFm
+        LastFM = SubiLastFm()
+    except ModuleNotFoundError:
+        print("You need to install pylast or set DO_LAST_FM = False.")
+        sys.exit(0)
 
+def get_lastfm_tags(artist_name):
+
+    if DO_LAST_FM:
+        foo = LastFM.last.get_artist(artist_name).get_top_tags()
+        tags = []
+        for thing in foo:
+            if thing.item.name not in lastfm_tag_kill_list:
+                if int(thing.weight) > lastfm_tag_weight_threshold:
+                    print("    Tags: {} : {}".format(thing.item.name, thing.weight))
+                    tags.append([thing.item.name, thing.weight])
+            else:
+                print("    Tags: SKIPPING {}".format(thing.item.name))
+        return tags
+    return None
 
 # -- Create database file by traversing music directory
 
@@ -59,6 +88,7 @@ class Index:
         conn     = sqlite3.connect(database_file)
         analyzer = StringAnalyzer()
 
+        ####################################
         # -- Loop through artist directories
 
         for artist_dir in os.listdir(root_path):
@@ -67,7 +97,7 @@ class Index:
                 full_artist_name = artist_dir.replace("_", " ")
                 dial_compatible_artist_name = artist_dir.replace("_", "").lower()
 
-                print("name: {}".format(full_artist_name))
+                print("Artist: {}".format(full_artist_name))
                 #print("dcn:  {}".format(dial_compatible_artist_name))
                 words = analyzer.analyze(full_artist_name)
                 #print(words)
@@ -84,9 +114,7 @@ class Index:
                          LIMIT 1""", (dial_compatible_artist_name,))
                 row = cursor.fetchone()
 
-                if row is not None:
-                    artist_id = row[0]
-                else:
+                if row is None:
                     # We need to save this artist to the artists table.
                     print("    ...Adding artist to database...")
                     cursor = conn.execute("""\
@@ -97,25 +125,43 @@ class Index:
 
                     conn.commit()
                     artist_id = cursor.lastrowid
-                    print("New artist saved as id: {}".format(artist_id))
+                    print("    New artist saved as id: {}".format(artist_id))
 
+                    # -- save all of the search_strings which have
+                    # -- been assembled from the artists name
 
-                # -- save all of the search_strings which have
-                # -- been assembled from the artists name
+                    for w in words:
+                        try:
+                            cursor.execute("""\
+                                INSERT INTO artist_search_strings
+                                            (search_string, artist_id)
+                                     VALUES (?,?);""", (w, artist_id))
+                        except:
+                            # ignoring errors from sqlite3 for duplicate entries.
+                            pass
+                    conn.commit()
+                else:
+                    # Arstis already existed.
+                    artist_id = row[0]
 
+                ################
+                # -- LastFM Tags
 
-                for w in words:
-                    try:
-                        cursor.execute("""\
-                            INSERT INTO artist_search_strings
-                                        (search_string, artist_id)
-                                 VALUES (?,?);""", (w, artist_id))
-                    except:
-                        # ignoring errors from sqlite3 for duplicate entries.
-                        pass
-                conn.commit()
+                tags = get_lastfm_tags(full_artist_name)
+                if tags is not None:
+                    for tag, weight in tags:
+                        try:
+                            cursor.execute("""\
+                                INSERT INTO artist_tags
+                                            (artist_id, tag, weight)
+                                     VALUES (?,?,?);""", (artist_id, tag, weight))
+                        except:
+                            # ignoring errors from sqlite3 for duplicate entries.
+                            print("  {} into {} didn't work".format(tag, artist_id))
+                            pass
+                        conn.commit()
 
-                ################################
+                ###############################
                 # -- Add Albums to the database
 
                 for album_dir in os.listdir(artist_root_path):
@@ -136,7 +182,7 @@ class Index:
                             album_name = album_dir
 
                     if album_name is None:
-                        print("Skipping album_root_path: {}".format(album_root_path))
+                        print("[ERROR] Skipping album_root_path: {}".format(album_root_path))
                         break
 
                     full_album_name = album_name.replace("_", " ")
@@ -163,7 +209,7 @@ class Index:
                     row = cursor.fetchone()
 
                     if row is not None:
-                        print("[Warning] Album alread exists in database: {}".format(dial_compatible_album_name))
+                        print("    Album alread exists in database: {}".format(dial_compatible_album_name))
                         album_id = row[0]
                     else:
                         # We need to save this album to the albums table.
@@ -181,7 +227,7 @@ class Index:
 
                         conn.commit()
                         album_id = cursor.lastrowid
-                        print("New album saved as id: {}".format(album_id))
+                        print("    New album saved as id: {}".format(album_id))
                     if len(album_art_path) > 0:
                         self.write_album_art_colors(album_id, album_art_path, conn)
             
@@ -199,6 +245,8 @@ class Index:
 
 
     def write_album_art_colors(self, album_id, album_path, conn):
+        if not DO_COLORZ:
+            return
         print("DEBUG: Write colors {} {}".format(album_id, album_path))
         try:
             colors = list(colorz(album_path))
@@ -226,80 +274,7 @@ class Index:
             conn.commit()
 
 
-#            for name in files:
-#                #if name[-4:].lower() == '.mp3':
-#                #if name[-5:].lower() == '.flac':
-#                if 1:
-#                    #print "NAME: ", name
-#
-#                    path = os.path.join(root,name)
-#                    alphaNumPattern = re.compile('[\W_]+')
-#
-#                    # Extract Tags From File
-#                    try:
-#                        id3 = ID3(path)
-#                    except:
-#                        errors.append(path)
-#                        id3 = None
-#
-#
-#                    # Insert each file into the id3 table
-#                    if id3 != None:
-#                        #cursor.execute("INSERT INTO id3(location, artist, title, album, genre, comment, duration, length, size) VALUES(?,?,?,?,?,?,?,?,?)", (path,id3.artist,id3.title,id3.album,id3.genre,id3.comment,id3.duration,id3.length,id3.size))
-#                        last_id3_id = cursor.lastrowid
-#                        #for field in ['artist', 'title', 'album', 'comment', 'genre']:
-#
-#
-#                        # Create the artist tables
-#                        for field in ['artist']:
-#                            #print "Field: ", getattr(id3, field)
-#                            full_artist_name = getattr(id3, field)
-#                            dial_compatible_artist_name = full_artist_name
-#                            dial_compatible_artist_name = alphaNumPattern.sub('', dial_compatible_artist_name)
-#                            dial_compatible_artist_name = dial_compatible_artist_name.lower()
-#
-#                            # Break up artist name into search_strings and put in artist_search_strings table
-#
-#                            words = analyzer.analyze(getattr(id3, field))
-#                            words.append(dial_compatible_artist_name)
-#                            for word in words:
-#                                #cursor.execute("INSERT INTO id3index(id3_id,search_string,field) VALUES (?,?,?);", (full_artist_name, word, field))
-#                                try:
-#                                    cursor.execute("INSERT INTO artist_search_strings(search_string,full_artist_name) VALUES (?,?);", (word, full_artist_name))
-#                                except:
-#                                    pass
-#
-#                            # Put artist in artists table
-#
-#                            try:
-#                                cursor.execute("INSERT INTO artists(dial_compatible_artist_name,full_artist_name) VALUES (?,?);", (dial_compatible_artist_name, full_artist_name))
-#                            except:
-#                                pass
-#
-#                            cnx.commit()
-#                # Display info about the whole process...
-#
-#                #cursor.execute('SELECT COUNT(*) AS nbrows FROM id3index LIMIT 1;')
-#        #for line in cursor:
-#            #print 'index size: ' + str(line["nbrows"])
-#        #cnx.commit()
-#        #if len(errors) > 0:
-#            #print ""
-#            #print "---- Errors ----"
-#            #print ""
-#            #for error in errors:
-#                #print error
-
-
-
-
 if __name__ == '__main__':
-    #if len(sys.argv) < 2:
-        #print 'Usage: tags.py [your music dir]'
-    #else:
-        #index = Index()
-        #index.build(sys.argv[1])
-
     index = Index()
     index.build(music_path)
 
