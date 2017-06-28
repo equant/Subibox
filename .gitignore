@@ -1,6 +1,7 @@
 *.swp
 *.swo
 tags
+passwords.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
