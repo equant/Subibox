@@ -1,7 +1,7 @@
 *.swp
 *.swo
 tags
-lastfm.py
+passwords.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
