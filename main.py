@@ -6,7 +6,6 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.label import Label
 from kivy.uix.image import Image
-from kivy.uix.checkbox import CheckBox
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
 from kivy.clock import Clock
