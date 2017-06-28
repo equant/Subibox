@@ -24,5 +24,6 @@ CREATE TABLE artist_search_strings(
 CREATE TABLE artist_tags(
     tag,
     artist_id,
+    weight,
     PRIMARY KEY(tag, artist_id)
 );

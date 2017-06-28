@@ -14,6 +14,12 @@ music_path = '/home/equant/beets'
 #music_path = '/mnt/toshiba/beets/'
 
 DO_LAST_FM = True
+DO_COLORZ  = False
+lastfm_tag_weight_threshold = 75   # Only use tags with a weght of 75-100
+
+lastfm_tag_kill_list = [
+        'seen live',
+]
 
 art_path_hack = [
         '/mnt/toshiba/',
@@ -61,9 +67,12 @@ def get_lastfm_tags(artist_name):
         foo = LastFM.last.get_artist(artist_name).get_top_tags()
         tags = []
         for thing in foo:
-            if int(thing.weight) > 80:
-                print("{} : {}".format(thing.item.name, thing.weight))
-                tags.append(thing.item.name)
+            if thing.item.name not in lastfm_tag_kill_list:
+                if int(thing.weight) > lastfm_tag_weight_threshold:
+                    print("    Tags: {} : {}".format(thing.item.name, thing.weight))
+                    tags.append([thing.item.name, thing.weight])
+            else:
+                print("    Tags: SKIPPING {}".format(thing.item.name))
         return tags
     return None
 
@@ -88,7 +97,7 @@ class Index:
                 full_artist_name = artist_dir.replace("_", " ")
                 dial_compatible_artist_name = artist_dir.replace("_", "").lower()
 
-                print("name: {}".format(full_artist_name))
+                print("Artist: {}".format(full_artist_name))
                 #print("dcn:  {}".format(dial_compatible_artist_name))
                 words = analyzer.analyze(full_artist_name)
                 #print(words)
@@ -116,7 +125,7 @@ class Index:
 
                     conn.commit()
                     artist_id = cursor.lastrowid
-                    print("New artist saved as id: {}".format(artist_id))
+                    print("    New artist saved as id: {}".format(artist_id))
 
                     # -- save all of the search_strings which have
                     # -- been assembled from the artists name
@@ -140,17 +149,17 @@ class Index:
 
                 tags = get_lastfm_tags(full_artist_name)
                 if tags is not None:
-                    for tag in tags:
+                    for tag, weight in tags:
                         try:
                             cursor.execute("""\
                                 INSERT INTO artist_tags
-                                            (artist_id, tag)
-                                     VALUES (?,?);""", (artist_id, tag))
+                                            (artist_id, tag, weight)
+                                     VALUES (?,?,?);""", (artist_id, tag, weight))
                         except:
                             # ignoring errors from sqlite3 for duplicate entries.
+                            print("  {} into {} didn't work".format(tag, artist_id))
                             pass
                         conn.commit()
-                sys.exit(0)
 
                 ###############################
                 # -- Add Albums to the database
@@ -173,7 +182,7 @@ class Index:
                             album_name = album_dir
 
                     if album_name is None:
-                        print("Skipping album_root_path: {}".format(album_root_path))
+                        print("[ERROR] Skipping album_root_path: {}".format(album_root_path))
                         break
 
                     full_album_name = album_name.replace("_", " ")
@@ -200,7 +209,7 @@ class Index:
                     row = cursor.fetchone()
 
                     if row is not None:
-                        print("[Warning] Album alread exists in database: {}".format(dial_compatible_album_name))
+                        print("    Album alread exists in database: {}".format(dial_compatible_album_name))
                         album_id = row[0]
                     else:
                         # We need to save this album to the albums table.
@@ -218,7 +227,7 @@ class Index:
 
                         conn.commit()
                         album_id = cursor.lastrowid
-                        print("New album saved as id: {}".format(album_id))
+                        print("    New album saved as id: {}".format(album_id))
                     if len(album_art_path) > 0:
                         self.write_album_art_colors(album_id, album_art_path, conn)
             
@@ -236,6 +245,8 @@ class Index:
 
 
     def write_album_art_colors(self, album_id, album_path, conn):
+        if not DO_COLORZ:
+            return
         print("DEBUG: Write colors {} {}".format(album_id, album_path))
         try:
             colors = list(colorz(album_path))
