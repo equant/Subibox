@@ -13,7 +13,7 @@ class ArduinoSerial:
 
         for port in ArduinoSerial.serialPorts:
             try:
-                arduino = serial.Serial(port, 9600, timeout=0)
+                arduino = serial.Serial(port, 28800, timeout=0)
             except:
                 pass
                 #print "Failed to connect on: ", port
