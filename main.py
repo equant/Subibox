@@ -1,4 +1,4 @@
-import time, random, sqlite3
+import time, random, sqlite3, sys
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
@@ -24,6 +24,7 @@ emulate_rotary_dial = True
 import SubiSearch
 import SubiPlay
 from RotaryDial import RotaryDial
+from arduinoSerial  import ArduinoSerial
 
 def timing(f):
     """
@@ -238,6 +239,7 @@ class LibraryScreen(ProtoScreen):
         self.search_list      = []
         self.last_result_df   = None
         self.last_artist_name = ""
+        self.last_result      = None
 
     def handle_input(self, input_string):
 
@@ -284,9 +286,10 @@ class LibraryScreen(ProtoScreen):
         
     # -- Due to pressing "enter" in self.handle_input()
     def switch_to_album_screen(self):
-        artist_id = self.last_result[0]['id']
-        self.manager.get_screen('albums').albums = app.musicSearch.get_artist_albums(int(artist_id))
-        self.manager.current = 'albums'
+        if self.last_result is not None:
+            artist_id = self.last_result[0]['id']
+            self.manager.get_screen('albums').albums = app.musicSearch.get_artist_albums(int(artist_id))
+            self.manager.current = 'albums'
 
 class SearchSettingsScreen(ProtoScreen):
 
@@ -465,6 +468,27 @@ class SubiboxApp(App):
                 return _
         return None
 
+    def connect_to_rotary_dial(self):
+        # Connect to the Arduino...
+        self.arduino = None
+        try:
+            arduinoSerial = ArduinoSerial()
+            arduino = arduinoSerial.connect()
+            self.arduino = arduino
+            self.rotary_dial_schedule = Clock.schedule_interval(self.check_for_rotary_dial_input, .2)
+        except:
+            print("[Warning]: Failed to connect to the arduino")
+            #sys.exit(0)
+
+
+    def check_for_rotary_dial_input(self, foo):
+        readlineString = None
+        readlineString = self.arduino.readline().decode('UTF-8')
+        readlineString = readlineString.rstrip()
+        if readlineString != "":
+            print("Rotary: {}".format(readlineString))
+            self.sm.current_screen.handle_input(readlineString)
+        pass
 
     def build(self):
         global app
@@ -472,6 +496,7 @@ class SubiboxApp(App):
         self.musicSearch = SubiSearch.Search()
         self.musicPlay   = SubiPlay.Play()
         self.dial        = RotaryDial()
+        self.connect_to_rotary_dial()
 
         # Create the screen manager
         self.sm = ScreenManager()
