@@ -10,7 +10,6 @@ This code is starting to get someplace useful for myself.  Chances are it is
 not useful to you.  This is my first Kivy project, so it is also a poor example
 of how to do things with Kivy.  Should be ready in 2039.
 
-
 # Requirements
 
 Python, kivy, python-mpd2, pillow, sqlite3, a rotary dial telephone
@@ -22,10 +21,5 @@ $ pip install --user pillow
 
 # Vesalius
 
-Here is a video of the old version...
-*  https://youtu.be/yD5oH2uD-sM
-
-
-# To Do
-
-*  "glError 0x505"
+*  [Development Notes Blog Post](https://tucsontelegraph.blogspot.com/2017/07/subibox-raspberry-pi-kivy-kivypie-mpd.html)
+*  [video of old version](https://youtu.be/yD5oH2uD-sM)
