@@ -1,8 +1,7 @@
 <img align='right' src='https://github.com/equant/jukebox/raw/master/assets/readme/Television-Telephone-vintage-header.jpg'>
 
 # Subibox Jukebox: 
-
-An [mpd](https://github.com/MusicPlayerDaemon/MPD) (digital jukebox) client using a TV and rotary dial telephone.
+An [rotary dial telephone](https://github.com/equant/Rotary-Dial) and [TV](https://www.raspberrypi.org/magpi/rca-pi-zero/) based [mpd](https://github.com/MusicPlayerDaemon/MPD) client/jukebox built using a Raspberry Pi, and Kivy/[KivyPie](http://kivypie.mitako.eu/).
 
 # Status
 
@@ -21,5 +20,5 @@ $ pip install --user pillow
 
 # Vesalius
 
-*  [Development Notes Blog Post](https://tucsontelegraph.blogspot.com/2017/07/subibox-raspberry-pi-kivy-kivypie-mpd.html)
+*  [Development notes blog post](https://tucsontelegraph.blogspot.com/2017/07/subibox-raspberry-pi-kivy-kivypie-mpd.html)
 *  [video of old version](https://youtu.be/yD5oH2uD-sM)
