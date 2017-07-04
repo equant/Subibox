@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, re, time
+import os, sys, re, time, random
 import sqlite3
 #import pandas as pd
 from collections import Counter
@@ -135,6 +135,7 @@ class Search():
             # Sort list by second column (score)...
             time2 = time.time()
             #print('Sorting took {:0.3f} ms'.format((time2-time1)*1000.0))
+            sorted_grouped_results.sort(key=lambda x:(x['score'], random.random()), reverse=True)
             return sorted_grouped_results, new_query_list
         else:
             return None, new_query_list
