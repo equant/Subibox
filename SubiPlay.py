@@ -11,7 +11,7 @@
 import mpd
 from mpd import MPDClient
 
-mpd_host = "192.168.1.80"
+mpd_host = "192.168.1.81"
 mpd_host = "localhost"
 mpd_port = "6600"
 

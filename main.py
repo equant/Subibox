@@ -84,13 +84,13 @@ Builder.load_string("""
         Label:
             id: artist
             text: self.parent.parent.artist
-            font_size: 100
+            font_size: 48
             font_name: "Avenir"
         Label:
             id: title
             size_hint: (1,0.2)
             text: self.parent.parent.album + " - " + self.parent.parent.title
-            font_size: 55
+            font_size: 24
             font_name: "Avenir"
 
 <LibraryScreen>:
@@ -103,8 +103,10 @@ Builder.load_string("""
         Label:
             id: search_string_label
             text: 'Dial Something...'
-            font_size: 48
+            font_size: 24
             font_name: "Avenir"
+            size_hint: None, None
+            pos: ( (root.width - self.width)//2, (root.height - self.height)//2 )
         Label:
             text: ''
 
@@ -185,7 +187,7 @@ class Album(RelativeLayout):
     def album_changed(self, instance, value):
         if len(self.album['album_art']) > 0:
             # There is an album cover image
-            #ac = self.album['album_art'].replace('/mnt/jukebox/','/home/equant/')
+            ac = self.album['album_art'].replace('/mnt/jukebox/','/home/equant/')
             album_cover = Image(source=ac, id='album_cover')
         else:
             album_cover = Label(text=self.album['full_album_name'], id='album_cover')
@@ -238,11 +240,14 @@ class LibraryScreen(ProtoScreen):
         self.search_string    = ""
         self.search_list      = []
         self.last_result_df   = None
-        self.last_artist_name = ""
+        self.last_artist_name = "Dial Something..."
         self.last_result      = None
+        self.burn_in_clock = Clock.schedule_interval(self.burn_in_prevention, 5.)
+
+    def on_pre_leave(self):
+        self.burn_in_clock.cancel()
 
     def handle_input(self, input_string):
-
         do_search = False
 
         if input_string is None:
@@ -275,6 +280,7 @@ class LibraryScreen(ProtoScreen):
             if result is None:
                 self.search_list = []
                 self.last_result_df = None
+                self.last_artist_name = "Dial Something..."
             else:
                 self.last_result = result
                 self.last_artist_name = result[0]['name']
@@ -290,6 +296,18 @@ class LibraryScreen(ProtoScreen):
             artist_id = self.last_result[0]['id']
             self.manager.get_screen('albums').albums = app.musicSearch.get_artist_albums(int(artist_id))
             self.manager.current = 'albums'
+
+    def burn_in_prevention(self, event):
+        #print("Move {}".format(self.ids.search_string_label))
+        #print(" {}".format(self.ids.search_string_label.pos))
+        l = self.ids.search_string_label
+        print("Label: {} / {}".format(l.height, l.width))
+        print("Root: {} / {}".format(self.parent.height, self.parent.width))
+        #print("Widow: {} / {}".format(Window.height, Window.width))
+        new_x = int(random.random() * (Window.width - l.width))
+        new_y = int(random.random() * (Window.height - l.height))
+        print("New: {} / {}".format(new_x, new_y))
+        self.ids.search_string_label.pos = (new_x, new_y)
 
 class SearchSettingsScreen(ProtoScreen):
 
@@ -428,11 +446,11 @@ class PlayingScreen(ProtoScreen):
         self.artist = ""
         self.album  = ""
         self.title  = ""
-        self.current_track_event = Clock.schedule_interval(self.update_track_info, 2.)
-    def on_pre_leave(self):
-        pass
-        self.current_track_event.cancel()
+        self.current_track_clock = Clock.schedule_interval(self.update_track_info, 2.)
+        self.burn_in_clock = Clock.schedule_interval(self.burn_in_prevention, 5.)
 
+    def on_pre_leave(self):
+        self.current_track_clock.cancel()
 
     def handle_input(self, input_string):
         if input_string == "1":
@@ -449,6 +467,9 @@ class PlayingScreen(ProtoScreen):
         self.artist = self.current_track_info['artist']
         self.album = self.current_track_info['album']
         self.title = self.current_track_info['title']
+
+    def burn_in_prevention(self, event):
+        print("Move {}".format(self.ids))
 
 
 class MyManager(ScreenManager):
