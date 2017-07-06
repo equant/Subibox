@@ -40,7 +40,10 @@ class Play():
 
     def next_track(self):
         self.connect()
-        self.client.next()
+        try: 
+            self.client.next()
+        except mpd.ConnectionError:
+            print("[ERROR] next_track(): mpd.ConnectionError")
 
     def pause(self):
         self.connect()
@@ -51,7 +54,10 @@ class Play():
         # mpc -h 192.168.1.80 -p 6600 listall Yeah_Yeah_Yeahs/
 # Maybe you need album_path[1:]?
         print("Requesting mpd play album: {}".format(album_path[1:]))
-        self.client.clear()
-        self.client.add(album_path)     # [1:] to strip leading /
-        self.client.play()
+        try: 
+            self.client.clear()
+            self.client.add(album_path)     # [1:] to strip leading /
+            self.client.play()
+        except mpd.ConnectionError:
+            print("[ERROR] play_album(): mpd.ConnectionError")
 
