@@ -5,7 +5,7 @@ import sqlite3
 #import pandas as pd
 from collections import Counter
 
-database_file    = 'dbTools/subibox.sqlite'
+database_file    = '/home/equant/jukebox/dbTools/subibox.sqlite'
 conn             = sqlite3.connect(database_file)
 conn.row_factory = sqlite3.Row
 
