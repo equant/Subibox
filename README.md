@@ -1,4 +1,5 @@
-<img align='right' src='https://github.com/equant/jukebox/raw/master/assets/readme/Television-Telephone-vintage-header.jpg'>
+<img align='right' src='https://github.com/equant/jukebox/raw/master/assets/readme/IMG_20170706_085902.jpg'><br>
+<img align='right' src='https://github.com/equant/jukebox/raw/master/assets/readme/IMG_20170706_090042.jpg'>
 
 # Subibox Jukebox: 
 An [rotary dial telephone](https://github.com/equant/Rotary-Dial) and [TV](https://www.raspberrypi.org/magpi/rca-pi-zero/) based [mpd](https://github.com/MusicPlayerDaemon/MPD) client/jukebox built using a Raspberry Pi, and Kivy/[KivyPie](http://kivypie.mitako.eu/).
