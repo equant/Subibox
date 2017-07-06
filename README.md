@@ -1,5 +1,5 @@
-<img align='right' width='50%' src='https://github.com/equant/jukebox/raw/master/assets/readme/IMG_20170706_085902.jpg'><br>
-<img align='right' width='50%' src='https://github.com/equant/jukebox/raw/master/assets/readme/IMG_20170706_090042.jpg'>
+<img align='right' width='50%' src='https://github.com/equant/Subibox/raw/master/assets/readme/IMG_20170706_085902.jpg'><br>
+<img align='right' width='50%' src='https://github.com/equant/Subibox/raw/master/assets/readme/IMG_20170706_090042.jpg'>
 
 # Subibox Jukebox: 
 An [rotary dial telephone](https://github.com/equant/Rotary-Dial) and [TV](https://www.raspberrypi.org/magpi/rca-pi-zero/) based [mpd](https://github.com/MusicPlayerDaemon/MPD) client/jukebox built using a Raspberry Pi, and Kivy/[KivyPie](http://kivypie.mitako.eu/).
@@ -8,16 +8,12 @@ An [rotary dial telephone](https://github.com/equant/Rotary-Dial) and [TV](https
 
 This code is starting to get someplace useful for myself.  Chances are it is
 not useful to you.  This is my first Kivy project, so it is also a poor example
-of how to do things with Kivy.  Should be ready in 2039.
+of how to do things with Kivy.  Should be ready in 2031.
 
 # Requirements
 
-Python, kivy, python-mpd2, pillow, sqlite3, a rotary dial telephone
-
-````
-$ pip install --user python-mpd2
-$ pip install --user pillow
-````
+Python, kivy, python-mpd2, pillow, sqlite3, a rotary dial telephone.
+See the [Wiki](https://github.com/equant/Subibox/wiki/) for more information.
 
 # Vesalius
 
