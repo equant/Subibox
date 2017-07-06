@@ -317,15 +317,9 @@ class LibraryScreen(ProtoScreen):
             self.manager.current = 'albums'
 
     def burn_in_prevention(self, event):
-        #print("Move {}".format(self.ids.search_string_label))
-        #print(" {}".format(self.ids.search_string_label.pos))
         l = self.ids.search_string_label
-        print("Label: {} / {}".format(l.height, l.width))
-        print("Root: {} / {}".format(self.parent.height, self.parent.width))
-        #print("Widow: {} / {}".format(Window.height, Window.width))
         new_x = int(random.random() * (Window.width - l.width))
         new_y = int(random.random() * (Window.height - l.height))
-        print("New: {} / {}".format(new_x, new_y))
         self.ids.search_string_label.pos = (new_x, new_y)
 
 class SearchSettingsScreen(ProtoScreen):

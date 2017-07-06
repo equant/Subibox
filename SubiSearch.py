@@ -43,7 +43,11 @@ class Search():
         result = []
         new_query_list = query_list
 
-        for query in query_list:
+        print("QL: {}".format(query_list))
+        for query in list(query_list):
+            print("XX: {}".format(query))
+
+        for query in list(query_list):
             """
             (1) Look for any match     (%string%)
             (2) Look for leading match (string%)
@@ -136,6 +140,9 @@ class Search():
             time2 = time.time()
             #print('Sorting took {:0.3f} ms'.format((time2-time1)*1000.0))
             sorted_grouped_results.sort(key=lambda x:(x['score'], random.random()), reverse=True)
+            #print("Possible Matches:\n{}".format(sorted_grouped_results))
+            #print("Old Query List:\n{}".format(query_list))
+            #print("Query List:\n{}".format(new_query_list))
             return sorted_grouped_results, new_query_list
         else:
             return None, new_query_list
