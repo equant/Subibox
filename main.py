@@ -106,7 +106,7 @@ Builder.load_string("""
             font_size: 24
             font_name: "Avenir"
             size_hint: None, None
-            pos: ( (root.width - self.width)//2, (root.height - self.height)//2 )
+            pos: ( int(0.5*(root.width - self.width)), int(0.5*(root.height - self.height)) )
         Label:
             text: ''
 
@@ -124,7 +124,7 @@ Builder.load_string("""
                 canvas:
                 id: back
                 text: "Back to Search"
-                font_size: 50
+                font_size: 36
                 font_name: "Avenir"
 
             DialLabel:
@@ -134,7 +134,7 @@ Builder.load_string("""
                 size_hint_y : None
                 id: search_artists
                 text: "Search Artists"
-                font_size: 50
+                font_size: 36
                 font_name: "Avenir"
                 size_hint_y: None
 
@@ -145,7 +145,18 @@ Builder.load_string("""
                 size_hint_y : None
                 id: search_tags
                 text: "Search Genre Tags"
-                font_size: 50
+                font_size: 36
+                font_name: "Avenir"
+                valign: 'bottom'
+
+            DialLabel:
+                size_hint_y : None
+                text: '0'
+            Label:
+                size_hint_y : None
+                id: nav_to_playing
+                text: "Currently Playing"
+                font_size: 36
                 font_name: "Avenir"
                 valign: 'bottom'
 
@@ -187,10 +198,11 @@ class Album(RelativeLayout):
     def album_changed(self, instance, value):
         if len(self.album['album_art']) > 0:
             # There is an album cover image
-            ac = self.album['album_art'].replace('/mnt/jukebox/','/home/equant/')
+            #ac = self.album['album_art'].replace('/mnt/jukebox/','/home/equant/')
+            ac = self.album['album_art'].replace('cover.jpg','cover-foo.jpg')
             album_cover = Image(source=ac, id='album_cover')
         else:
-            album_cover = Label(text=self.album['full_album_name'], id='album_cover')
+            album_cover = Label(text=self.album['full_album_name'], id='album_cover', font_size=24)
             # There is not album cover image
         self.add_widget(album_cover)
         return
@@ -242,13 +254,20 @@ class LibraryScreen(ProtoScreen):
         self.last_result_df   = None
         self.last_artist_name = "Dial Something..."
         self.last_result      = None
-        self.burn_in_clock = Clock.schedule_interval(self.burn_in_prevention, 5.)
+        self.burn_in_clock = Clock.schedule_interval(self.burn_in_prevention, 15.)
 
     def on_pre_leave(self):
         self.burn_in_clock.cancel()
 
+    def recenter_label(self):
+        l = self.ids.search_string_label
+        x = int(0.5 * (Window.width - l.width))
+        y = int(0.5 * (Window.height - l.height))
+        self.ids.search_string_label.pos = (x, y)
+
     def handle_input(self, input_string):
         do_search = False
+        self.recenter_label()
 
         if input_string is None:
             # User pressed Return
@@ -325,6 +344,9 @@ class SearchSettingsScreen(ProtoScreen):
             #self.search_artists = not self.search_artists
         elif input_string == "3":
             self.search_tags = True
+            #self.search_tags = not self.search_tags
+        elif input_string == "0":
+            self.manager.current = 'playing'
             #self.search_tags = not self.search_tags
 
 
@@ -451,6 +473,7 @@ class PlayingScreen(ProtoScreen):
 
     def on_pre_leave(self):
         self.current_track_clock.cancel()
+        self.burn_in_clock.cancel()
 
     def handle_input(self, input_string):
         if input_string == "1":
@@ -469,7 +492,17 @@ class PlayingScreen(ProtoScreen):
         self.title = self.current_track_info['title']
 
     def burn_in_prevention(self, event):
-        print("Move {}".format(self.ids))
+        print("Move Label!{}".format(self.ids.artist))
+        #print(" {}".format(self.ids.search_string_label.pos))
+        l = self.ids.artist
+        new_x = int(random.random() * (Window.width - l.width))
+        new_y = int(random.random() * (Window.height - l.height))
+        self.ids.artist.pos = (new_x, new_y)
+        l = self.ids.title
+        new_x = int(random.random() * (Window.width - l.width))
+        new_y = int(random.random() * (Window.height - l.height))
+        self.ids.title.pos = (new_x, new_y)
+
 
 
 class MyManager(ScreenManager):

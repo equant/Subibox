@@ -12,7 +12,6 @@ import mpd
 from mpd import MPDClient
 
 mpd_host = "192.168.1.81"
-mpd_host = "localhost"
 mpd_port = "6600"
 
 #client.close()                     # send the close command
@@ -50,8 +49,9 @@ class Play():
     def play_album(self, album_path):
         self.connect()
         # mpc -h 192.168.1.80 -p 6600 listall Yeah_Yeah_Yeahs/
-        print("Requesting mpd play album: {}".format(album_path))
+# Maybe you need album_path[1:]?
+        print("Requesting mpd play album: {}".format(album_path[1:]))
         self.client.clear()
-        self.client.add(album_path[1:])     # [1:] to strip leading /
+        self.client.add(album_path)     # [1:] to strip leading /
         self.client.play()
 
