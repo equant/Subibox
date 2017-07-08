@@ -462,6 +462,7 @@ class PlayingScreen(ProtoScreen):
         self.artist = ""
         self.album  = ""
         self.title  = ""
+        self.update_track_info("")
         self.current_track_clock = Clock.schedule_interval(self.update_track_info, 2.)
         self.burn_in_clock = Clock.schedule_interval(self.burn_in_prevention, 5.)
 
