@@ -41,6 +41,9 @@ class Play():
         except mpd.ConnectionError:
             print("[ERROR] current_track_info(): mpd.ConnectionError")
             return None
+        except mpd.CommandError:
+            print("[ERROR] play_album(): mpd.CommandError")
+            return None
 
     def next_track(self):
         self.connect()
@@ -48,6 +51,8 @@ class Play():
             self.client.next()
         except mpd.ConnectionError:
             print("[ERROR] next_track(): mpd.ConnectionError")
+        except mpd.CommandError:
+            print("[ERROR] play_album(): mpd.CommandError")
 
     def pause(self):
         self.connect()
@@ -55,7 +60,8 @@ class Play():
             self.client.pause()
         except mpd.ConnectionError:
             print("[ERROR] pause(): mpd.ConnectionError")
-            return None
+        except mpd.CommandError:
+            print("[ERROR] play_album(): mpd.CommandError")
 
     def play_album(self, album_path):
         self.connect()
@@ -68,4 +74,6 @@ class Play():
             self.client.play()
         except mpd.ConnectionError:
             print("[ERROR] play_album(): mpd.ConnectionError")
+        except mpd.CommandError:
+            print("[ERROR] play_album(): mpd.CommandError")
 
