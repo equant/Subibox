@@ -481,9 +481,18 @@ class PlayingScreen(ProtoScreen):
 
     def update_track_info(self, event):
         self.current_track_info = app.musicPlay.current_track_info()
-        self.artist = self.current_track_info['artist']
-        self.album = self.current_track_info['album']
-        self.title = self.current_track_info['title']
+        try:
+            self.artist = self.current_track_info['artist']
+            self.album = self.current_track_info['album']
+            self.title = self.current_track_info['title']
+        except KeyError:
+            self.artist = "Not Playing"
+            self.album  = "Blah"
+            self.title  = "Blah"
+        except NameError:
+            self.artist = "Not Playing"
+            self.album  = "Blah"
+            self.title  = "Blah"
 
     def burn_in_prevention(self, event):
         print("Move Label!{}".format(self.ids.artist))

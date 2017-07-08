@@ -36,7 +36,11 @@ class Play():
 
     def current_track_info(self):
         self.connect()
-        return self.client.currentsong()
+        try:
+            return self.client.currentsong()
+        except mpd.ConnectionError:
+            print("[ERROR] current_track_info(): mpd.ConnectionError")
+            return None
 
     def next_track(self):
         self.connect()
@@ -47,7 +51,11 @@ class Play():
 
     def pause(self):
         self.connect()
-        self.client.pause()
+        try:
+            self.client.pause()
+        except mpd.ConnectionError:
+            print("[ERROR] pause(): mpd.ConnectionError")
+            return None
 
     def play_album(self, album_path):
         self.connect()

@@ -43,10 +43,6 @@ class Search():
         result = []
         new_query_list = query_list
 
-        print("QL: {}".format(query_list))
-        for query in list(query_list):
-            print("XX: {}".format(query))
-
         for query in list(query_list):
             """
             (1) Look for any match     (%string%)
