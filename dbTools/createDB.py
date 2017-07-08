@@ -1,8 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # http://www.desfrenes.com/blog/post/python-mp3-indexer-look-up
 
 import os, sys, re, time
-import mutagen
 import sqlite3
 import unicodedata
 from colorz import colorz
@@ -10,8 +9,7 @@ from colorz import colorz
 # change this path to your sqlite database
 #dsn = '/Users/mickael/python_sandbox/tags/id3.sqlite'
 database_file = 'subibox.sqlite'
-music_path = '/home/equant/beets'
-#music_path = '/mnt/toshiba/beets/'
+music_path = '/mnt/jukebox/beets'
 
 DO_LAST_FM = True
 DO_COLORZ  = False
@@ -53,29 +51,29 @@ class StringAnalyzer:
         return ''.join((c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn'))
 
 
-if DO_LAST_FM:
-    try:
-        from lastfm import SubiLastFm
-        LastFM = SubiLastFm()
-    except ModuleNotFoundError:
-        print("You need to install pylast or set DO_LAST_FM = False.")
-        sys.exit(0)
+#if DO_LAST_FM:
+#    try:
+#        from lastfm import SubiLastFm
+#        LastFM = SubiLastFm()
+#    except ModuleNotFoundError:
+#        print("You need to install pylast or set DO_LAST_FM = False.")
+#        sys.exit(0)
 
-def get_lastfm_tags(artist_name):
-
-    if DO_LAST_FM:
-        foo = LastFM.last.get_artist(artist_name).get_top_tags()
-        tags = []
-        for thing in foo:
-            if thing.item.name not in lastfm_tag_kill_list:
-                if int(thing.weight) > lastfm_tag_weight_threshold:
-                    print("    Tags: {} : {}".format(thing.item.name, thing.weight))
-                    tags.append([thing.item.name, thing.weight])
-            else:
-                print("    Tags: SKIPPING {}".format(thing.item.name))
-        return tags
-    return None
-
+#def get_lastfm_tags(artist_name):
+#
+#    if DO_LAST_FM:
+#        foo = LastFM.last.get_artist(artist_name).get_top_tags()
+#        tags = []
+#        for thing in foo:
+#            if thing.item.name not in lastfm_tag_kill_list:
+#                if int(thing.weight) > lastfm_tag_weight_threshold:
+#                    print("    Tags: {} : {}".format(thing.item.name, thing.weight))
+#                    tags.append([thing.item.name, thing.weight])
+#            else:
+#                print("    Tags: SKIPPING {}".format(thing.item.name))
+#        return tags
+#    return None
+#
 # -- Create database file by traversing music directory
 
 class Index:
@@ -147,19 +145,19 @@ class Index:
                 ################
                 # -- LastFM Tags
 
-                tags = get_lastfm_tags(full_artist_name)
-                if tags is not None:
-                    for tag, weight in tags:
-                        try:
-                            cursor.execute("""\
-                                INSERT INTO artist_tags
-                                            (artist_id, tag, weight)
-                                     VALUES (?,?,?);""", (artist_id, tag, weight))
-                        except:
-                            # ignoring errors from sqlite3 for duplicate entries.
-                            print("  {} into {} didn't work".format(tag, artist_id))
-                            pass
-                        conn.commit()
+#                tags = get_lastfm_tags(full_artist_name)
+#                if tags is not None:
+#                    for tag, weight in tags:
+#                        try:
+#                            cursor.execute("""\
+#                                INSERT INTO artist_tags
+#                                            (artist_id, tag, weight)
+#                                     VALUES (?,?,?);""", (artist_id, tag, weight))
+#                        except:
+#                            # ignoring errors from sqlite3 for duplicate entries.
+#                            print("  {} into {} didn't work".format(tag, artist_id))
+#                            pass
+#                        conn.commit()
 
                 ###############################
                 # -- Add Albums to the database
