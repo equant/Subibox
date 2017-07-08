@@ -199,8 +199,8 @@ class Album(RelativeLayout):
         if len(self.album['album_art']) > 0:
             # There is an album cover image
             #ac = self.album['album_art'].replace('/mnt/jukebox/','/home/equant/')
-            #ac = self.album['album_art'].replace('cover.jpg','cover-foo.jpg')
-            ac = self.album['album_art'].replace('cover.jpg','cover.jpg')
+            ac = self.album['album_art'].replace('cover.jpg','cover-foo.jpg')
+            #ac = self.album['album_art'].replace('cover.jpg','cover.jpg')
             album_cover = Image(source=ac, id='album_cover')
         else:
             album_cover = Label(text=self.album['full_album_name'], id='album_cover', font_size=24)
