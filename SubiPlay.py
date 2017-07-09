@@ -70,7 +70,7 @@ class Play():
         print("Requesting mpd play album: {}".format(album_path[1:]))
         try: 
             self.client.clear()
-            self.client.add(album_path)     # [1:] to strip leading /
+            self.client.add(album_path[1:])     # [1:] to strip leading /
             self.client.play()
         except mpd.ConnectionError:
             print("[ERROR] play_album(): mpd.ConnectionError")
