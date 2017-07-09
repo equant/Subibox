@@ -2,6 +2,7 @@
 *.swo
 tags
 passwords.py
+SubiConfig.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,4 +1,4 @@
-import time, random, sqlite3, sys
+import random, sqlite3, sys
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
@@ -25,155 +25,6 @@ import SubiSearch
 import SubiPlay
 from RotaryDial import RotaryDial
 from arduinoSerial  import ArduinoSerial
-
-def timing(f):
-    """
-    Used to benchmark code to discover bottlenecks.  Important since the target
-    platform is Pi Zero
-    Usage:
-
-    @timing
-    def function_you_want_to_time(self, foo bar):
-        blah blah blah
-    """
-    def wrap(*args):
-        time1 = time.time()
-        ret = f(*args)
-        time2 = time.time()
-        print('{} function took {:0.3f} ms'.format(f.__name__, (time2-time1)*1000.0))
-        return ret
-    return wrap
-
-def rgb_to_color_list(rgb_string, alpha=1.):
-    """
-    "#FFFFFF" -> (1.0, 1.0, 1.0, 1.0)
-    "000000"  -> (0.0, 0.0, 0.0, 1.0)
-    """
-    if rgb_string[0] == '#':
-        c = rgb_string[1:]
-    else:
-        c = rgb_string
-    return [int(c[i:i+2],16)/255 for i in range(0, len(c), 2)] + [alpha]
-
-
-Builder.load_string("""
-<DialLabel>
-    font_size     : 96
-    font_name     : "paraaminobenzoic"
-    text          : "X"
-    pos_hint      : {'x': 0, 'y': 0}
-    size_hint     : [None, None]
-    id            : dial_number
-    outline_color : [0, 0.1, 0.2, 1]
-    outline_width : 3
-
-<AlbumScreen>:
-    id: album_screen
-    spacing: 10
-    padding: 10
-    GridLayout:
-        id: album_layout
-        rows: 3
-
-
-<PlayingScreen>:
-    id: playing_screen
-    BoxLayout:
-        id: layout
-        orientation: 'vertical'
-        Label:
-            id: artist
-            text: self.parent.parent.artist
-            font_size: 48
-            font_name: "Avenir"
-        Label:
-            id: title
-            size_hint: (1,0.2)
-            text: self.parent.parent.album + " - " + self.parent.parent.title
-            font_size: 24
-            font_name: "Avenir"
-
-<LibraryScreen>:
-    id: library_screen
-    BoxLayout:
-        id: layout
-        orientation: 'vertical'
-        Label:
-            text: ''
-        Label:
-            id: search_string_label
-            text: 'Dial Something...'
-            font_size: 24
-            font_name: "Avenir"
-            size_hint: None, None
-            pos: ( int(0.5*(root.width - self.width)), int(0.5*(root.height - self.height)) )
-        Label:
-            text: ''
-
-<SearchSettingsScreen>:
-    BoxLayout:
-        orientation: 'vertical'
-        GridLayout:
-            id: layout
-            cols: 2
-            DialLabel:
-                size_hint_y : None
-                text: '1'
-            Label:
-                size_hint_y : None
-                canvas:
-                id: back
-                text: "Back to Search"
-                font_size: 36
-                font_name: "Avenir"
-
-            DialLabel:
-                size_hint_y : None
-                text: '2'
-            Label:
-                size_hint_y : None
-                id: search_artists
-                text: "Search Artists"
-                font_size: 36
-                font_name: "Avenir"
-                size_hint_y: None
-
-            DialLabel:
-                size_hint_y : None
-                text: '3'
-            Label:
-                size_hint_y : None
-                id: search_tags
-                text: "Search Genre Tags"
-                font_size: 36
-                font_name: "Avenir"
-                valign: 'bottom'
-
-            DialLabel:
-                size_hint_y : None
-                text: '0'
-            Label:
-                size_hint_y : None
-                id: nav_to_playing
-                text: "Currently Playing"
-                font_size: 36
-                font_name: "Avenir"
-                valign: 'bottom'
-
-#                canvas:
-#                    Color:
-#                        rgba: .2,.2,.2,1
-#                    Rectangle:
-#                        pos: self.pos
-#                        size: self.size
-
-<NextButton>
-    Label:
-        text: "Next ->"
-    DialLabel:
-        text: '9'
-        canvas:
-""")
 
 class NextButton(RelativeLayout):
     def build(self):
@@ -497,7 +348,7 @@ class PlayingScreen(ProtoScreen):
             self.title  = "Blah"
 
     def burn_in_prevention(self, event):
-        print("Move Label!{}".format(self.ids.artist))
+        #print("Move Label!{}".format(self.ids.artist))
         #print(" {}".format(self.ids.search_string_label.pos))
         l = self.ids.artist
         new_x = int(random.random() * (Window.width - l.width))

@@ -11,11 +11,7 @@
 import mpd
 from mpd import MPDClient
 
-mpd_host = "192.168.1.81"
-mpd_port = "6600"
-
-#client.close()                     # send the close command
-#client.disconnect()                # disconnect from the server
+from SubiConfig import MPD_HOST, MPD_PORT
 
 class Play():
 
@@ -26,7 +22,7 @@ class Play():
 
     def connect(self):
         try:
-            self.client.connect(mpd_host, mpd_port)
+            self.client.connect(MPD_HOST, MPD_PORT)
             print("MPD Version: " + self.client.mpd_version)          # print the MPD version
         except OSError:
             print("Error connecting to MPD")
@@ -38,30 +34,30 @@ class Play():
         self.connect()
         try:
             return self.client.currentsong()
-        except mpd.ConnectionError:
-            print("[ERROR] current_track_info(): mpd.ConnectionError")
+        except mpd.ConnectionError as e:
+            print("[ERROR] current_track_info(): mpd.ConnectionError".format(e))
             return None
-        except mpd.CommandError:
-            print("[ERROR] play_album(): mpd.CommandError")
+        except mpd.CommandError as e:
+            print("[ERROR] play_album(): mpd.CommandError".format(e))
             return None
 
     def next_track(self):
         self.connect()
         try: 
             self.client.next()
-        except mpd.ConnectionError:
-            print("[ERROR] next_track(): mpd.ConnectionError")
-        except mpd.CommandError:
-            print("[ERROR] play_album(): mpd.CommandError")
+        except mpd.ConnectionError as e:
+            print("[ERROR] next_track(): mpd.ConnectionError".format(e))
+        except mpd.CommandError as e:
+            print("[ERROR] play_album(): mpd.CommandError".format(e))
 
     def pause(self):
         self.connect()
         try:
             self.client.pause()
-        except mpd.ConnectionError:
-            print("[ERROR] pause(): mpd.ConnectionError")
-        except mpd.CommandError:
-            print("[ERROR] play_album(): mpd.CommandError")
+        except mpd.ConnectionError as e:
+            print("[ERROR] pause(): mpd.ConnectionError".format(e))
+        except mpd.CommandError as e:
+            print("[ERROR] play_album(): mpd.CommandError".format(e))
 
     def play_album(self, album_path):
         self.connect()
@@ -72,8 +68,8 @@ class Play():
             self.client.clear()
             self.client.add(album_path[1:])     # [1:] to strip leading /
             self.client.play()
-        except mpd.ConnectionError:
-            print("[ERROR] play_album(): mpd.ConnectionError")
-        except mpd.CommandError:
-            print("[ERROR] play_album(): mpd.CommandError")
+        except mpd.ConnectionError as e:
+            print("[ERROR] play_album(): mpd.ConnectionError: {}".format(e))
+        except mpd.CommandError as e:
+            print("[ERROR] play_album(): mpd.CommandError: {}".format(e))
 
