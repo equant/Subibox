@@ -1,0 +1,6 @@
+# -- MPD
+MPD_HOST = "localhost"
+MPD_PORT = "6600"
+
+# -- SQL
+SUBI_DATABASE_FILE = 'dbTools/subibox.sqlite'

@@ -5,8 +5,9 @@ import sqlite3
 #import pandas as pd
 from collections import Counter
 
-database_file    = 'dbTools/subibox.sqlite'
-conn             = sqlite3.connect(database_file)
+from SubiConfig import SUBI_DATABASE_FILE
+
+conn               = sqlite3.connect(SUBI_DATABASE_FILE)
 conn.row_factory = sqlite3.Row
 
 def timing(f):
@@ -43,7 +44,9 @@ class Search():
         result = []
         new_query_list = query_list
 
+        print("Query List:\n{}".format(query_list))
         for query in list(query_list):
+            print("Query: {}".format(query))
             """
             (1) Look for any match     (%string%)
             (2) Look for leading match (string%)
@@ -75,6 +78,7 @@ class Search():
                 result.append([artist_full_name, 10, artist_id])
             time2 = time.time()
             #print('Any (*) Matches took {:0.3f} ms'.format((time2-time1)*1000.0))
+            print("%%: {}".format(result))
 
             time1 = time.time()
             # -(2)- Look for an close match (20 pts)...
